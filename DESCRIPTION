@@ -1,12 +1,14 @@
 Package: MapMatching
-Title: What the Package Does (One Line, Title Case)
+Title: Matches the recorded GPS coordinate data in a trajectory file to the correct road links
 Version: 0.0.0.9000
 Authors@R: 
-    person(given = "First",
-           family = "Last",
+    person(given = "Farinoush",
+           family = "Sharifi",
            role = c("aut", "cre"),
-           email = "first.last@example.com")
-Description: What the package does (one paragraph).
-License: What license it uses
+           email = "farinoush.sharifi@gmail.com")
+Description: The package reads the GPS recorded data and imports link data from an open source map 
+             or any other user identified sources. Next, it assigns the correct road link number to 
+             each GPS record, and outputs the link numbers.
+License: GPL-2
 Encoding: UTF-8
 LazyData: true
