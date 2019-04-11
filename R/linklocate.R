@@ -1,0 +1,3 @@
+linklocate <- function(LatList, LongList){
+
+}
