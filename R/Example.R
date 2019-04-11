@@ -3,7 +3,6 @@
 # 1. Install and load the library
 require(MapMatching)
 
-
 # 2. Read the GPS coordinates from the table: first column is the Latitude, second column is the longitude
 GPStbl <- read.delim("TripGPS.txt")
 
