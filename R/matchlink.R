@@ -15,9 +15,11 @@
 
 matchlink <- function(LatList, LongList){
 
+  snappedpoints <- matchtocloselink(LatList,LongList)
   for(i in 1:length(LatList)){
-    #probably add the K nearest neighbor function from the homework
-
+    #get the ID list for the few points back and forth, can estimate the
+    #spent time over the distance and compare with the road speed limit,
+    #see if the difference is huge or not, then decide to how to match the link
 
   }
 }
@@ -66,4 +68,3 @@ matchtocloselink <- function(LatList,LongList){
 
   return(snappedpoints)
 }
-
