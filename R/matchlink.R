@@ -14,5 +14,56 @@
 #' 1184, 1184, 1184, 1184, 1184, 1184, 1183, 1183, 1183, 1782
 
 matchlink <- function(LatList, LongList){
-  return(LatList)
+
+  for(i in 1:length(LatList)){
+    #probably add the K nearest neighbor function from the homework
+
+
+  }
 }
+
+#get the box around the whole data
+getbox <- function(LatList, LongList){
+
+  minLat <- min(LatList)
+  maxLat <- max(LatList)
+  minLong <- min(LongList)
+  maxLong <- max(LongList)
+
+  mapbox <- corner_bbox(minLong, minLat, maxLong, maxLat)
+
+  return(mapbox)
+}
+
+#source the map from open street map
+sourcemap <- function(LatList,LongList){
+
+  mapbox <- getbox(LatList,LongList)
+  api <- osmsource_api("https://api.openstreetmap.org/api/0.6/")
+  location <- get_osm(mapbox, source = api)
+
+  return(location)
+}
+
+#find all links in the area
+findlinks <- function(LatList,LongList){
+
+  location <- sourcemap(LatList, LongList)
+  links <- find(location, way(tags(k == "highway")))
+  links <- find_down(location, way(links))
+  links <- subset(location, ids = links)
+
+  return(links)
+}
+
+#first snap all points to the closest link
+matchtocloselink <- function(LatList,LongList){
+
+  links <- as_sp(findlinks(LatList,LongList), "lines")
+  points <- c(LatList,LongList)
+  #need to find a better function
+  snappedpoints <- snapPointsToLines(points,links, maxDist =100, withAttrs = TRUE,idField = "RIA_RTE_ID")
+
+  return(snappedpoints)
+}
+
