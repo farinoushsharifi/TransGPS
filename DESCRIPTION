@@ -1,6 +1,6 @@
 Package: TransGPS
 Title: Matches the recorded GPS coordinate data in a trajectory file to the correct road links
-Depends:zoo,geosphere,leaflet,RANN,dplyr,RCurl,osmar
+Depends:zoo,geosphere,leaflet,RANN,dplyr,osmar
 Suggests:
     testthat,
     knitr,
