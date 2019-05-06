@@ -1,6 +1,6 @@
 #' Coordinates Interpolation
 #'
-#' Generate list of interpolated latitudes and longitudes by regularization of the time series for a given increment \code{timeint}
+#' Generate a list of interpolated latitudes and longitudes by regularization of the time series for a given increment \code{timeint}
 #'
 #' @param LatList list of latitudes collected from a GPS recording device
 #' @param LongList list of longitudes collected from a GPS recording device

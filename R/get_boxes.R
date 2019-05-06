@@ -6,9 +6,11 @@
 #' @param LatList list of latitudes collected from a GPS recording device
 #' @param LongList list of longitudes collected from a GPS recording device
 #' @param timeseq list of time series for GPS recording device in format \code{"\%Y-\%m-\%d \%H:\%M:\%S"}
-#' @param resolution an approximation of GPS recorded distance within each desired box in kilometers
+#' @param resolution an approximation of GPS recorded distance within each desired bounding box in kilometers
+#' @param offLong a positive bounding box longitudal margin in decimal degrees
+#' @param offLat a positive bounding box latitudal margin in decimal degrees
 #'
-#' @return \code{\link{get_boxes}} return a list of bounding boxes along the GPS recorded data track and specified by their four corners
+#' @return \code{\link{get_boxes}} return a list of bounding boxes specification table and coordinates table
 #' @export
 #'
 #' @examples
@@ -31,14 +33,17 @@
 #'
 #' timeseq <- as.POSIXct(timeseq)
 #'
+#' offLong=0.001
+#' offLat=0.002
+#'
 #' #generates only one box and gives warning for the high resolution
-#' get_boxes(LatList, LongList, timeseq, resolution=1000)
+#' get_boxes(LatList, LongList, timeseq, resolution=1000,offLong,offLat)
 #'
 #' #generates only one box and gives warning for the small resolution
-#' get_boxes(LatList, LongList, timeseq, resolution=0.001)
+#' get_boxes(LatList, LongList, timeseq, resolution=0.001,offLong,offLat)
 #'
 #' #generates two bounding boxes
-#' get_boxes(LatList, LongList, timeseq, resolution=0.1)
+#' get_boxes(LatList, LongList, timeseq, resolution=0.1,offLong,offLat)
 
 get_boxes <- function(LatList, LongList, timeseq, resolution=100, offLong=0.001,offLat=0.001){
 
@@ -52,6 +57,10 @@ get_boxes <- function(LatList, LongList, timeseq, resolution=100, offLong=0.001,
 
   if (any(class(timeseq)!=c("POSIXct","POSIXt"))){
     stop("Time Sequense in not in POSIXct or POSIXt format. You can change it using the as.POSIXct or as.POSIXlt functions")
+  }
+
+  if ((!(offLong>0))|(!(offLat>0))) {
+    stop("offLong and offLat should be positive decimal degrees")
   }
 
 
