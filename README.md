@@ -1,35 +1,69 @@
 TransGPS Package
 ================
 Farinoush Sharifi
-5/6/2019
+May 2019
 
-## R Markdown
+## TransGPS: Toward a better analysis of GPS data
 
-This is an R Markdown document. Markdown is a simple formatting syntax
-for authoring HTML, PDF, and MS Word documents. For more details on
-using R Markdown see <http://rmarkdown.rstudio.com>.
+This package is developed to ease the tedious procedure of GPS data
+cleaning and map matching. The functions provided here focus from the
+very basic regularization and interpolation of the GPS coordinates
+toward creating bounding boxes and accessing the well-known
+[OpenStreetMap(OSM)](https://www.openstreetmap.org) data for the purpose
+of map matching.
 
-When you click the **Knit** button a document will be generated that
-includes both content as well as the output of any embedded R code
-chunks within the document. You can embed an R code chunk like this:
+Creating bounding boxes allows the users to access OSM data without any
+challenges of developing a data server. This package also provides an
+interactive platform for the users to find the desired bounding boxes on
+the map. Finally, the user can find the best link match for each GPS
+coordinate.
+
+## Installation
 
 ``` r
-summary(cars)
+##devtools::install_github("farinoushsharifi/TransGPS")
 ```
 
-    ##      speed           dist       
-    ##  Min.   : 4.0   Min.   :  2.00  
-    ##  1st Qu.:12.0   1st Qu.: 26.00  
-    ##  Median :15.0   Median : 36.00  
-    ##  Mean   :15.4   Mean   : 42.98  
-    ##  3rd Qu.:19.0   3rd Qu.: 56.00  
-    ##  Max.   :25.0   Max.   :120.00
+## Usage
 
-## Including Plots
+``` r
+library(TransGPS)
+```
 
-You can also embed plots, for example:
+### Coordinates Interpolation
 
-![](README_files/figure-gfm/pressure-1.png)<!-- -->
+``` r
+LatList <- c(31.67514, 31.675195, 31.67525, 31.675304, 31.675356, 
+    31.675408, 31.675467, 31.675517, 31.675569, 31.675623)
 
-Note that the `echo = FALSE` parameter was added to the code chunk to
-prevent printing of the R code that generated the plot.
+LongList <- c(-106.326522, -106.326367, -106.326211, -106.326058, 
+    -106.325901, -106.325739, -106.325572, -106.32541, -106.325247, 
+    -106.325092)
+
+timeseq <- c("2019-04-29 15:20:51", "2019-04-29 15:21:03", "2019-04-29 15:21:06", 
+    "2019-04-29 15:21:15", "2019-04-29 15:21:17", "2019-04-29 15:21:32", 
+    "2019-04-29 15:21:34", "2019-04-29 15:21:51", "2019-04-29 15:22:09", 
+    "2019-04-29 15:22:36")
+
+timeseq <- as.POSIXct(timeseq)
+
+# regularize time sequence over 1 second
+interp_sec <- interpolate_coords(LatList, LongList, timeseq, 
+    1)
+
+# regularize time sequence over 1 minute
+interp_min <- interpolate_coords(LatList, LongList, timeseq, 
+    60)
+```
+
+### Generate Bounding Boxes
+
+![](README_files/figure-gfm/pressure2-1.png)<!-- -->
+
+### Iteration Over Bounding Boxes
+
+![](README_files/figure-gfm/pressure3-1.png)<!-- -->
+
+### Matching The OSM Link IDs to GPS Coordinates
+
+![](README_files/figure-gfm/pressure4-1.png)<!-- -->
