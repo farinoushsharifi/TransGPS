@@ -120,20 +120,19 @@ compute_distance <- function(LatList, LongList,timeseq){
   latlong <- data.frame(LatList,LongList,timeseq)
   latlong <- latlong[order(latlong$timeseq),]
 
-  distvec <- rep(0,times=nrow(latlong))
+  latlong <- latlong %>% mutate(lastLat = lag(LatList),lasttLng = lag(LongList))
 
-  for (i in 1:(nrow(latlong)-1)) {
-    distance <- geosphere::distHaversine(cbind(latlong$LongList[i],latlong$LatList[i]),cbind(latlong$LongList[i+1],latlong$LatList[i+1]))
-    distvec[i+1] <- distance/1000
-  }
+  distvec <- geosphere::distHaversine(cbind(latlong$LongList,latlong$LatList),
+                                       cbind(latlong$lasttLng,latlong$lastLat))/1000
+  distvec[1] <- 0
 
-  timediff <- c(1/3600,diff(as.numeric(timeseq))/3600)
+  timediff <- c(1/3600,diff(as.numeric(latlong$timeseq))/3600)
 
-  disttbl <- data.frame("PointNumber"=seq(1,nrow(latlong),1), "Latitude"=LatList,
-                        "Longitude"=LongList, "Time"=timeseq,
+  disttbl <- data.frame("PointNumber"=seq(1,nrow(latlong),1), "Latitude"=latlong$LatList,
+                        "Longitude"=latlong$LongList, "Time"=latlong$timeseq,
                         "Distance.km"=distvec, "CumulativeDistance.km"=cumsum(distvec),
-                        "Speed.km/h"=distvec/timediff,
-                        "AverageTotalSpeed"=cumsum(distvec)/cumsum(timediff))
+                        "Speed.kmph"=distvec/timediff,
+                        "AverageTotalSpeed.kmph"=cumsum(distvec)/cumsum(timediff))
 
   return(disttbl)
 }
