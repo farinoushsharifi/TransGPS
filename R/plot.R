@@ -1,36 +1,52 @@
+GPSplot <- function(boxout,save=FALSE) {
 
+  # pal <- colorRampPalette(green2red(20))
+  colpal <- colorNumeric(palette = "RdYlGn", domain = boxout$boxtable$Speed.km.h)
+  color <- colpal(boxout$boxtable$Speed.km.h)
 
-library(leaflet)
+  plottbl <- boxout$boxtable %>%
+    mutate(nextLat = lead(Latitude),nextLng = lead(Longitude),color = color)
 
-GPSplot <- function(LatList,LongList,boxout) {
+  map <- leaflet(plottbl) %>% addTiles(options = tileOptions(opacity=0.7))
 
-  pal <- colorNumeric(
-    palette = "Accent",
-    domain = boxout$boxtable$Latitude)
+  for (i in 1:(nrow(plottbl)-1)) {
+    map <- addPolylines(map = map, data = plottbl,
+                        lng = as.numeric(plottbl[i, c('Longitude', 'nextLng')]),
+                        lat = as.numeric(plottbl[i, c('Latitude', 'nextLat')]),
+                        color = as.character(plottbl[i, c('color')]),
+                        opacity=1, fillOpacity =1, weight = 5)
+  }
 
-  m <- leaflet(boxout$boxtable) %>%
-    addTiles(options = tileOptions(opacity=0.7)) %>%
-    addPolylines(lng=LongList, lat=LatList, fillColor = ~pal(Latitude),
-                 opacity=1, fillOpacity =1, weight = 3,color = ~pal(Latitude)) %>%
-    addRectangles(boxlist[1,],boxlist[2,],boxlist[3,],boxlist[4,],
-                  color="green",fillColor = "green",opacity = 0.5,fillOpacity = 0.5,
-                  highlightOptions = highlightOptions(
-                    stroke = TRUE,
-                    weight = 5,
-                    color = "#666",
-                    dashArray = "",
-                    fillOpacity = 0.7,
-                    bringToFront = TRUE)) %>%
-    addLegend("bottomright", pal = pal, values = boxout$boxtable$Speed.km.h,
-              title = "Speed",
-              opacity = 1) %>% addMeasure(    position = "bottomleft",
-                                              primaryLengthUnit = "meters",
-                                              primaryAreaUnit = "sqmeters",
-                                              activeColor = "#3D535D",
-                                              completedColor = "#7D4479")
+  map <- map %>%
+    addRectangles(boxout$boxlist[1,],boxout$boxlist[2,],boxout$boxlist[3,],boxout$boxlist[4,],
+                  opacity = 0.7, weight = 3, color = "blue",
+                  fillColor = "transparent",dashArray = "1",
+                  highlightOptions = highlightOptions(weight = 3,
+                  color = "navy",fillColor="transparent",opacity = 1)) %>%
+    addLegend(position = "bottomright", pal = colpal, values = boxout$boxtable$Speed.km.h,
+              title = "Speed",opacity = 1) %>%
+    addMeasure(position = "bottomleft", primaryLengthUnit = "meters",
+               primaryAreaUnit = "sqmeters",activeColor = "#3D535D",
+               completedColor = "#7D4479")
+
 
   return(m)
 }
+
+library(mapview)
+library(grDevices)
+library(colorRamps)
+library(RColorBrewer)
+library(dplyr)
+
+library(leaflet)
+library(htmlwidgets)
+library(webshot)
+
+## save html to png
+saveWidget(map, "temp.html", selfcontained = FALSE)
+webshot("temp.html", file = "Rplot.png",
+        cliprect = "viewport")
 
 png(paste(i,'test.png', sep = ''))
 
