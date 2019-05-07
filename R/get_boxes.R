@@ -149,8 +149,8 @@ compute_distance <- function(LatList, LongList,timeseq){
   latlong <- data.frame(LatList,LongList,timeseq)
   latlong <- latlong[order(latlong$timeseq),]
 
-  latlong$LastLat <- c(LatList[1],LatList[1:(length(LatList)-1)])
-  latlong$LastLng <- c(LongList[1],LongList[1:(length(LongList)-1)])
+  latlong$LastLat <- c(latlong$LatList[1],latlong$LatList[1:(length(latlong$LatList)-1)])
+  latlong$LastLng <- c(latlong$LongList[1],latlong$LongList[1:(length(latlong$LongList)-1)])
 
   distvec <- geosphere::distHaversine(cbind(latlong$LongList,latlong$LatList),
                                        cbind(latlong$LastLng,latlong$LastLat))/1000
