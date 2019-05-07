@@ -129,6 +129,14 @@ match_highway <- function (LatList, LongList, timeseq, k,
     stop("offLat and offLong must be numeric")
   }
 
+  latlong <- data.frame(LatList,LongList,timeseq, boxcuts)
+  latlong <- latlong[order(latlong$timeseq),]
+
+  LatList <- latlong$LatList
+  LongList <- latlong$LongList
+  timeseq <- latlong$timeseq
+  boxcuts <- latlong$boxcuts
+
   api <- osmar::osmsource_api(osmlink)
   highway <-  matrix(0,nrow=length(LatList),ncol=k)
 
