@@ -61,17 +61,29 @@
 match_highway <- function (LatList, LongList, timeseq, k,
                            boxcuts = as.numeric(get_boxes(LatList,LongList,timeseq,resolution,offLong,offLat)$boxtable$boxcuts),
                            boxlist = as.matrix(get_boxes(LatList,LongList,timeseq,resolution,offLong,offLat)$boxlist),
-                           resolution = 10, offLong = 0.001, offLat = 0.001,
-                           osmlink = "https://api.openstreetmap.org/api/0.6/") {
+                           resolution = 5, offLong = 0.001, offLat = 0.001,
+                           osmlink = "https://api.openstreetmap.org/api/0.6/")  {
 
   if(missing(boxcuts) & missing(boxlist)) {
-    boxcuts = as.numeric(get_boxes(LatList,LongList,timeseq,resolution,offLong,offLat)$boxtable$boxcuts)
-    boxlist = as.matrix(get_boxes(LatList,LongList,timeseq,resolution,offLong,offLat)$boxlist)
-  }
+    boxout <- get_boxes(LatList,LongList,timeseq,resolution,offLong,offLat)
+    boxcuts = as.numeric(boxout$boxtable$boxcuts)
+    boxlist = as.matrix(boxout$boxlist)
 
-  if(!(identical(missing(boxcuts),missing(boxlist)))) {
-      stop("boxcuts and boxlists should be both given to the function or let the function generate it to assure the compatibility")
-    }
+    LatList <- boxout$boxtable$Latitude
+    LongList <- boxout$boxtable$Longitude
+    timeseq <- boxout$boxtable$DateTime
+
+  } else if (!(identical(missing(boxcuts),missing(boxlist)))) {
+    stop("boxcuts and boxlists should be both given to the function or let the function generate it to assure the compatibility")
+  } else {
+    latlong <- data.frame(LatList,LongList,timeseq, boxcuts)
+    latlong <- latlong[order(latlong$timeseq),]
+
+    LatList <- latlong$LatList
+    LongList <- latlong$LongList
+    timeseq <- latlong$timeseq
+    boxcuts <- latlong$boxcuts
+  }
 
   if (length(LatList)!=length(LongList)) {
     stop("Latitude and longitude lists do not have the same length")

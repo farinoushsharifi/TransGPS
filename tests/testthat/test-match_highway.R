@@ -9,13 +9,21 @@ test_that("matching to highway works", {
   boxcuts <- round(runif(100,1,10))
   expect_error(match_highway(LatList,LongList,timeseq,k=5,boxcuts = boxcuts))
 
-  resultbox <- get_boxes(LatList,LongList,timeseq,resolution = 5)
-  boxcuts <- resultbox$boxtable$boxcuts
-  boxlist <- resultbox$boxlist
-  result1 <- match_highway(LatList,LongList,timeseq,k=2,
-                           boxcuts = boxcuts,boxlist = boxlist)
+  result1 <- match_highway(LatList,LongList,timeseq,k=2,resolution = 5)
   expect_equal(length(result1),length(LatList))
 
-  result2 <- match_highway(LatList,LongList,timeseq,k=2,resolution = 5)
+  resultbox <- get_boxes(LatList,LongList,timeseq,resolution = 5)
+  boxlist <- resultbox$boxlist
+  boxtable <- resultbox$boxtable[sample(nrow(resultbox$boxtable)),]
+  boxcuts <- boxtable$boxcuts
+  LatList <- boxtable$Latitude
+  LongList <- boxtable$Longitude
+  timeseq <- boxtable$DateTime
+
+  result2 <- match_highway(LatList,LongList,timeseq,k=2,
+                           boxcuts = boxcuts,boxlist = boxlist)
+
   expect_equal(result1,result2)
+
+
 })

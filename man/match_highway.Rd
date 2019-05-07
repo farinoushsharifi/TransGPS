@@ -8,7 +8,7 @@ match_highway(LatList, LongList, timeseq, k,
   boxcuts = as.numeric(get_boxes(LatList, LongList, timeseq, resolution,
   offLong, offLat)$boxtable$boxcuts),
   boxlist = as.matrix(get_boxes(LatList, LongList, timeseq, resolution,
-  offLong, offLat)$boxlist), resolution = 10, offLong = 0.001,
+  offLong, offLat)$boxlist), resolution = 5, offLong = 0.001,
   offLat = 0.001, osmlink = "https://api.openstreetmap.org/api/0.6/")
 }
 \arguments{
