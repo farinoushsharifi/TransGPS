@@ -8,24 +8,27 @@ get_boxes(LatList, LongList, timeseq, resolution = 100,
   offLong = 0.001, offLat = 0.001)
 }
 \arguments{
-\item{LatList}{list of latitudes collected from a GPS recording device}
+\item{LatList}{A vector of size \emph{n} for latitudes collected from a GPS recording device}
 
-\item{LongList}{list of longitudes collected from a GPS recording device}
+\item{LongList}{A vector of size \emph{n} for longitudes collected from a GPS recording device}
 
-\item{timeseq}{list of time series for GPS recording device in format \code{"\%Y-\%m-\%d \%H:\%M:\%S"}}
+\item{timeseq}{A vector of size \emph{n} for irregular time sequence of recorded GPS data in format \code{"\%Y-\%m-\%d \%H:\%M:\%S"}}
 
-\item{resolution}{an approximation of GPS recorded distance within each desired bounding box in kilometers}
+\item{resolution}{(Optional) Approximate value of distance within each bounding box in kilometers}
 
-\item{offLong}{a positive bounding box longitudal margin in decimal degrees}
+\item{offLong}{(Optional) A positive value of bounding box longitudal margin in decimal degrees}
 
-\item{offLat}{a positive bounding box latitudal margin in decimal degrees}
+\item{offLat}{(Optional) A positive value of bounding box latitudal margin in decimal degrees}
 }
 \value{
-\code{\link{get_boxes}} return a list of bounding boxes specification table and coordinates table
+\code{\link{get_boxes}} return a list of
+\itemize{
+  \item A matrix of size \emph{4 X p} of bounding boxes coordinates; with rows of \code{("left","bottom","right","top")}
+  \item A table of size \emph{n X 4} with columns of \code{("DateTime","Latitude","Longitude","boxcuts")}; \code{boxcuts} column has \emph{p} levels and shows the corresponding box for each coordinate
+}
 }
 \description{
-Generate a series of bounding boxes to split the long GPS recorded data into smaller
-regions for a given \code{resolution}
+Generate a list of bounding boxes along the GPS recorded data
 }
 \examples{
 

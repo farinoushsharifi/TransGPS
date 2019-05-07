@@ -3,21 +3,21 @@
 #' Snap a set of GPS coordinates to the \href{https://www.openstreetmap.org}{OpenStreetMap (OSM)} data highways. This function facilitates the common process in two ways:
 #' \itemize{
 #'   \item Dividing the whole region into bounding boxes, which allows using the OSM data through API sourcing instead of setting up an OSM data server
-#'   \item implement the fast K-Nearest Neighbor method to find the closest K links to each GPS coordinate
+#'   \item Implementation of a fast K-Nearest Neighbor method to find the closest K links to each GPS coordinate
 #' }
 #'
-#' @param LatList list of latitudes collected from a GPS recording device
-#' @param LongList list of longitudes collected from a GPS recording device
-#' @param timeseq list of time series for GPS recording device in format \code{"\%Y-\%m-\%d \%H:\%M:\%S"}
-#' @param k maximum number of close highways to consider for the KNN analysis of each GPS coordinate
-#' @param boxcuts a list of bounding box group number for each latitude and longitude (should be the same length as \code{LatList} and \code{LatList}; it can be generated from the \code{\link{get_boxes}} function by \code{~boxtable$boxcuts})
-#' @param boxlist a list of bounding boxes coordinations; each bounding box coordinates is in the form of \code{("left","bottom","right","top")} (it can be generated from the \code{\link{get_boxes}} function by \code{~boxlist})
-#' @param resolution an approximation of GPS recorded distance within each desired bounding box in kilometers (to be used for \code{\link{get_boxes}})
-#' @param offLong a positive bounding box longitudal margin in decimal degrees (to be used for \code{\link{get_boxes}})
-#' @param offLat a positive bounding box latitudal margin in decimal degrees (to be used for \code{\link{get_boxes}})
-#' @param osmlink the API link for the \href{https://www.openstreetmap.org}{OpenStreetMap} data
+#' @param LatList A vector of size \emph{n} for latitudes collected from a GPS recording device
+#' @param LongList A vector of size \emph{n} for longitudes collected from a GPS recording device
+#' @param timeseq A vector of size \emph{n} for irregular time sequence of recorded GPS data in format \code{"\%Y-\%m-\%d \%H:\%M:\%S"}
+#' @param k Value of maximum number of close highways; to consider for the KNN analysis
+#' @param boxcuts (Optional) A vector of size \emph{n} with \emph{p} levels for the bounding box split of GPS coordinates; it can be generated from the \code{\link{get_boxes}} function by \code{~boxtable$boxcuts})
+#' @param boxlist (Optional) A matrix of size \emph{4 X p} of bounding boxes coordinates with rows of \code{("left","bottom","right","top")}; it can be generated from the \code{\link{get_boxes}} function by \code{~boxlist})
+#' @param resolution (Optional) Approximate value of distance within each bounding box in kilometers; to be used for \code{\link{get_boxes}}
+#' @param offLong (Optional) A positive value of bounding box longitudal margin in decimal degrees; to be used for \code{\link{get_boxes}}
+#' @param offLat (Optional) A positive value of bounding box latitudal margin in decimal degrees; to be used for \code{\link{get_boxes}}
+#' @param osmlink (Optional) The API link for the \href{https://www.openstreetmap.org}{OpenStreetMap} data
 #'
-#' @return \code{\link{match_highway}} return a list of highway link IDs based on \href{https://www.openstreetmap.org}{OpenStreetMap} specification for the given GPS coordinates
+#' @return \code{\link{match_highway}} return a vector of size \emph{n} for highway link IDs based on \href{https://www.openstreetmap.org}{OpenStreetMap}
 #' @export
 #'
 #' @examples
@@ -59,25 +59,82 @@
 #' k, boxcuts=boxcuts, boxlist=boxlist)
 
 match_highway <- function (LatList, LongList, timeseq, k,
-                           boxcuts = get_boxes(LatList,LongList,timeseq,resolution,offLong,offLat)$boxtable$boxcuts,
-                           boxlist = get_boxes(LatList,LongList,timeseq,resolution,offLong,offLat)$boxlist,
+                           boxcuts = as.numeric(get_boxes(LatList,LongList,timeseq,resolution,offLong,offLat)$boxtable$boxcuts),
+                           boxlist = as.matrix(get_boxes(LatList,LongList,timeseq,resolution,offLong,offLat)$boxlist),
                            resolution = 10, offLong = 0.001, offLat = 0.001,
                            osmlink = "https://api.openstreetmap.org/api/0.6/") {
+
+  if(missing(boxcuts) & missing(boxlist)) {
+    warning("boxcuts and boxlists are missing. In this case, the function will generate both from the get_boxes function and the input resolution, offLong, and offLat")
+    boxcuts = as.numeric(get_boxes(LatList,LongList,timeseq,resolution,offLong,offLat)$boxtable$boxcuts)
+    boxlist = as.matrix(get_boxes(LatList,LongList,timeseq,resolution,offLong,offLat)$boxlist)
+  }
+
+  if(!(identical(missing(boxcuts),missing(boxlist)))) {
+      warning("boxcuts and boxlists should be both given to the function or let the function generate it to assure the compatibility. In this case, the function will generate both from the get_boxes function and the input resolution, offLong, and offLat")
+      boxcuts = as.numeric(get_boxes(LatList,LongList,timeseq,resolution,offLong,offLat)$boxtable$boxcuts)
+      boxlist = as.matrix(get_boxes(LatList,LongList,timeseq,resolution,offLong,offLat)$boxlist)
+  }
 
   if (length(LatList)!=length(LongList)) {
     stop("Latitude and longitude lists do not have the same length")
   }
 
-  if (length(LatList)!=length(boxcuts)) {
-    stop("Latitude and bounding box cut lists do not have the same length")
+  if (length(LatList)!=length(timeseq)) {
+    stop("Latitude and time sequence lists do not have the same length")
   }
 
   if ((k!= round(k))|(k<0)|(k==0)){
     stop("k is not acceptable, please enter a positive integer")
   }
 
+  if (length(LatList)!=length(boxcuts)) {
+    stop("Latitude and bounding box cut lists do not have the same length")
+  }
+
+  if (ncol(boxlist)<1) {
+    stop("bounding box lists do not have any data")
+  }
+
+  if ((!(offLong>0))|(!(offLat>0))) {
+    stop("offLong and offLat should be positive decimal degrees")
+  }
+
+  if (!(resolution>0)) {
+    stop("Resolution should be positive distances in kilometers")
+  }
+
+  if ((any(class(LatList)!="numeric"))|(any(class(LongList)!="numeric"))) {
+    stop("Latitude and longitude lists must be numeric")
+  }
+
+  if (any(class(timeseq)!=c("POSIXct","POSIXt"))){
+    stop("Time Sequense in not in POSIXct or POSIXt format. You can change it using the as.POSIXct or as.POSIXlt functions")
+  }
+
+  if (any(class(boxcuts)!="numeric")) {
+    stop("bounding box cuts must be numeric")
+  }
+
+  if ((is.matrix(boxlist)!=TRUE)|(nrow(boxlist)!=4)) {
+    stop("bounding box list is not a matrix of 4 rows")
+  }
+
+  if ((nlevels(factor(boxcuts))!=ncol(boxlist))) {
+    stop("bounding box list and box cuts are not compatible in terms of number of boxes")
+  }
+
+  if (class(resolution)!="numeric") {
+    stop("Resolution must be numeric")
+  }
+
+  if ((class(offLat)!="numeric")|(class(offLong)!="numeric")) {
+    stop("offLat and offLong must be numeric")
+  }
+
   api <- osmar::osmsource_api(osmlink)
   highway <-  matrix(0,nrow=length(LatList),ncol=k)
+
 
   for (i in 1:ncol(boxlist)) {
 

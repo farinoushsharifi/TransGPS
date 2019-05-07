@@ -1,16 +1,20 @@
 #' Generating Bounding Boxes
 #'
-#' Generate a series of bounding boxes to split the long GPS recorded data into smaller
-#' regions for a given \code{resolution}
+#' Generate a list of bounding boxes along the GPS recorded data
 #'
-#' @param LatList list of latitudes collected from a GPS recording device
-#' @param LongList list of longitudes collected from a GPS recording device
-#' @param timeseq list of time series for GPS recording device in format \code{"\%Y-\%m-\%d \%H:\%M:\%S"}
-#' @param resolution an approximation of GPS recorded distance within each desired bounding box in kilometers
-#' @param offLong a positive bounding box longitudal margin in decimal degrees
-#' @param offLat a positive bounding box latitudal margin in decimal degrees
+#' @param LatList A vector of size \emph{n} for latitudes collected from a GPS recording device
+#' @param LongList A vector of size \emph{n} for longitudes collected from a GPS recording device
+#' @param timeseq A vector of size \emph{n} for irregular time sequence of recorded GPS data in format \code{"\%Y-\%m-\%d \%H:\%M:\%S"}
+#' @param resolution (Optional) Approximate value of distance within each bounding box in kilometers
+#' @param offLong (Optional) A positive value of bounding box longitudal margin in decimal degrees
+#' @param offLat (Optional) A positive value of bounding box latitudal margin in decimal degrees
 #'
-#' @return \code{\link{get_boxes}} return a list of bounding boxes specification table and coordinates table
+#' @return \code{\link{get_boxes}} return a list of
+#' \itemize{
+#'   \item A matrix of size \emph{4 X p} of bounding boxes coordinates; with rows of \code{("left","bottom","right","top")}
+#'   \item A table of size \emph{n X 4} with columns of \code{("DateTime","Latitude","Longitude","boxcuts")}; \code{boxcuts} column has \emph{p} levels and shows the corresponding box for each coordinate
+#' }
+#'
 #' @export
 #'
 #' @examples
@@ -55,20 +59,35 @@ get_boxes <- function(LatList, LongList, timeseq, resolution=100, offLong=0.001,
     stop("Latitude and time sequence lists do not have the same length")
   }
 
-  if (any(class(timeseq)!=c("POSIXct","POSIXt"))){
-    stop("Time Sequense in not in POSIXct or POSIXt format. You can change it using the as.POSIXct or as.POSIXlt functions")
-  }
-
   if ((!(offLong>0))|(!(offLat>0))) {
     stop("offLong and offLat should be positive decimal degrees")
   }
 
+  if (!(resolution>0)) {
+    stop("Resolution should be positive distances in kilometers")
+  }
+
+  if ((any(class(LatList)!="numeric"))|(any(class(LongList)!="numeric"))) {
+    stop("Latitude and longitude lists must be numeric")
+  }
+
+  if (any(class(timeseq)!=c("POSIXct","POSIXt"))){
+    stop("Time Sequense in not in POSIXct or POSIXt format. You can change it using the as.POSIXct or as.POSIXlt functions")
+  }
+
+  if (class(resolution)!="numeric") {
+    stop("Resolution must be numeric")
+  }
+
+  if ((class(offLat)!="numeric")|(class(offLong)!="numeric")) {
+    stop("offLat and offLong must be numeric")
+  }
 
   disttbl <- compute_distance(LatList,LongList,timeseq)
 
   LatList <- disttbl$Latitude
   LongList <- disttbl$Longitude
-  timeseq <- disttbl$Time
+  timeseq <- disttbl$DateTime
 
   if (any(resolution < disttbl$Distance.km)) {
     warning("Resolution is at least smaller than one recorded time interval")
@@ -97,8 +116,8 @@ get_boxes <- function(LatList, LongList, timeseq, resolution=100, offLong=0.001,
     Latmin <- aggregate(disttbl$Latitude, list(disttbl$boxcuts), min)$x
     Longmax <- aggregate(disttbl$Longitude, list(disttbl$boxcuts), max)$x
     Longmin <- aggregate(disttbl$Longitude, list(disttbl$boxcuts), min)$x
-    Timemax <- aggregate(disttbl$Time, list(disttbl$boxcuts), max)$x
-    Timemin <- aggregate(disttbl$Time, list(disttbl$boxcuts), min)$x
+    Timemax <- aggregate(disttbl$DateTime, list(disttbl$boxcuts), max)$x
+    Timemin <- aggregate(disttbl$DateTime, list(disttbl$boxcuts), min)$x
     Distsum <- aggregate(disttbl$Distance.km, list(disttbl$boxcuts), sum)$x
 
     aggdatatbl <- data.frame("Max Latitude" = Latmax,"Min Latitude" = Latmin,
@@ -117,10 +136,11 @@ get_boxes <- function(LatList, LongList, timeseq, resolution=100, offLong=0.001,
     }
 
     colnames(boxlist) <- paste("Group",seq(1,nrow(aggdatatbl),1),sep = "")
-
   }
 
-  return(list("boxlist"=boxlist, "boxtable"=disttbl))
+  boxtable <- disttbl[,c("DateTime","Latitude","Longitude","boxcuts")]
+  boxtable$boxcuts <- as.numeric(boxtable$boxcuts)
+  return(list("boxlist"=as.matrix(boxlist), "boxtable"=boxtable))
 }
 
 
@@ -138,7 +158,7 @@ compute_distance <- function(LatList, LongList,timeseq){
   timediff <- c(1/3600,diff(as.numeric(latlong$timeseq))/3600)
 
   disttbl <- data.frame("PointNumber"=seq(1,nrow(latlong),1), "Latitude"=latlong$LatList,
-                        "Longitude"=latlong$LongList, "Time"=latlong$timeseq,
+                        "Longitude"=latlong$LongList, "DateTime"=latlong$timeseq,
                         "Distance.km"=distvec, "CumulativeDistance.km"=cumsum(distvec),
                         "Speed.kmph"=distvec/timediff,
                         "AverageTotalSpeed.kmph"=cumsum(distvec)/cumsum(timediff))

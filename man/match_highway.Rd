@@ -4,41 +4,42 @@
 \alias{match_highway}
 \title{Coordinates Map Matching}
 \usage{
-match_highway(LatList, LongList, timeseq, k, boxcuts = get_boxes(LatList,
-  LongList, timeseq, resolution, offLong, offLat)$boxtable$boxcuts,
-  boxlist = get_boxes(LatList, LongList, timeseq, resolution, offLong,
-  offLat)$boxlist, resolution = 10, offLong = 0.001, offLat = 0.001,
-  osmlink = "https://api.openstreetmap.org/api/0.6/")
+match_highway(LatList, LongList, timeseq, k,
+  boxcuts = as.numeric(get_boxes(LatList, LongList, timeseq, resolution,
+  offLong, offLat)$boxtable$boxcuts),
+  boxlist = as.matrix(get_boxes(LatList, LongList, timeseq, resolution,
+  offLong, offLat)$boxlist), resolution = 10, offLong = 0.001,
+  offLat = 0.001, osmlink = "https://api.openstreetmap.org/api/0.6/")
 }
 \arguments{
-\item{LatList}{list of latitudes collected from a GPS recording device}
+\item{LatList}{A vector of size \emph{n} for latitudes collected from a GPS recording device}
 
-\item{LongList}{list of longitudes collected from a GPS recording device}
+\item{LongList}{A vector of size \emph{n} for longitudes collected from a GPS recording device}
 
-\item{timeseq}{list of time series for GPS recording device in format \code{"\%Y-\%m-\%d \%H:\%M:\%S"}}
+\item{timeseq}{A vector of size \emph{n} for irregular time sequence of recorded GPS data in format \code{"\%Y-\%m-\%d \%H:\%M:\%S"}}
 
-\item{k}{maximum number of close highways to consider for the KNN analysis of each GPS coordinate}
+\item{k}{Value of maximum number of close highways; to consider for the KNN analysis}
 
-\item{boxcuts}{a list of bounding box group number for each latitude and longitude (should be the same length as \code{LatList} and \code{LatList}; it can be generated from the \code{\link{get_boxes}} function by \code{~boxtable$boxcuts})}
+\item{boxcuts}{(Optional) A vector of size \emph{n} with \emph{p} levels for the bounding box split of GPS coordinates; it can be generated from the \code{\link{get_boxes}} function by \code{~boxtable$boxcuts})}
 
-\item{boxlist}{a list of bounding boxes coordinations; each bounding box coordinates is in the form of \code{("left","bottom","right","top")} (it can be generated from the \code{\link{get_boxes}} function by \code{~boxlist})}
+\item{boxlist}{(Optional) A matrix of size \emph{4 X p} of bounding boxes coordinates with rows of \code{("left","bottom","right","top")}; it can be generated from the \code{\link{get_boxes}} function by \code{~boxlist})}
 
-\item{resolution}{an approximation of GPS recorded distance within each desired bounding box in kilometers (to be used for \code{\link{get_boxes}})}
+\item{resolution}{(Optional) Approximate value of distance within each bounding box in kilometers; to be used for \code{\link{get_boxes}}}
 
-\item{offLong}{a positive bounding box longitudal margin in decimal degrees (to be used for \code{\link{get_boxes}})}
+\item{offLong}{(Optional) A positive value of bounding box longitudal margin in decimal degrees; to be used for \code{\link{get_boxes}}}
 
-\item{offLat}{a positive bounding box latitudal margin in decimal degrees (to be used for \code{\link{get_boxes}})}
+\item{offLat}{(Optional) A positive value of bounding box latitudal margin in decimal degrees; to be used for \code{\link{get_boxes}}}
 
-\item{osmlink}{the API link for the \href{https://www.openstreetmap.org}{OpenStreetMap} data}
+\item{osmlink}{(Optional) The API link for the \href{https://www.openstreetmap.org}{OpenStreetMap} data}
 }
 \value{
-\code{\link{match_highway}} return a list of highway link IDs based on \href{https://www.openstreetmap.org}{OpenStreetMap} specification for the given GPS coordinates
+\code{\link{match_highway}} return a vector of size \emph{n} for highway link IDs based on \href{https://www.openstreetmap.org}{OpenStreetMap}
 }
 \description{
 Snap a set of GPS coordinates to the \href{https://www.openstreetmap.org}{OpenStreetMap (OSM)} data highways. This function facilitates the common process in two ways:
 \itemize{
   \item Dividing the whole region into bounding boxes, which allows using the OSM data through API sourcing instead of setting up an OSM data server
-  \item implement the fast K-Nearest Neighbor method to find the closest K links to each GPS coordinate
+  \item Implementation of a fast K-Nearest Neighbor method to find the closest K links to each GPS coordinate
 }
 }
 \examples{

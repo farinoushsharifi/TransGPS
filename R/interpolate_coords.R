@@ -1,13 +1,13 @@
 #' Coordinates Interpolation
 #'
-#' Generate a list of interpolated latitudes and longitudes by regularization of the time series for a given increment \code{timeint}
+#' Interpolate GPS coordinates by regularizing the time series for a given increment \code{timeint}
 #'
-#' @param LatList list of latitudes collected from a GPS recording device
-#' @param LongList list of longitudes collected from a GPS recording device
-#' @param timeseq list of irregular time series for GPS recording device in format \code{"\%Y-\%m-\%d \%H:\%M:\%S"}
-#' @param timeint desired time step or increment of the time sequence in seconds (default value is \code{1} second)
+#' @param LatList A vector of size \emph{n} for latitudes collected from a GPS recording device
+#' @param LongList A vector of size \emph{n} for longitudes collected from a GPS recording device
+#' @param timeseq A vector of size \emph{n} for irregular time sequence of recorded GPS data in format \code{"\%Y-\%m-\%d \%H:\%M:\%S"}
+#' @param timeint (Optional) Value of desired time step or increment in seconds (default value is \emph{1 second})
 #'
-#' @return \code{\link{interpolate_coords}} return a matrix of interpolated regularized time series, interpolated latitude, and interpolated longitude.
+#' @return \code{\link{interpolate_coords}} return a table of size \emph{n X 3} with columns of \code{("DateTime","Latitude","Longitude")}
 #' @export
 #'
 #' @examples
@@ -57,8 +57,16 @@ interpolate_coords <- function(LatList,LongList,timeseq,timeint=1) {
     stop("Latitude and time sequence lists do not have the same length")
   }
 
+  if ((any(class(LatList)!="numeric"))|(any(class(LongList)!="numeric"))) {
+    stop("Latitude and longitude lists must be numeric")
+  }
+
   if (any(class(timeseq)!=c("POSIXct","POSIXt"))){
     stop("Time Sequense in not in POSIXct or POSIXt format. You can change it using the as.POSIXct or as.POSIXlt functions")
+  }
+
+  if ((class(timeint)!="numeric")&(class(timeint)!="integer")) {
+    stop("Time increment should be numeric")
   }
 
   coordtbl <- data.frame(LatList,LongList,timeseq)
