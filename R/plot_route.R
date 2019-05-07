@@ -73,31 +73,31 @@ plot_route <- function(LatList, LongList, timeseq, boxlist=as.matrix(osmar::corn
   }
 
 
-  disttbl <- compute_distance(LatList,LongList,timeseq)
+  plottbl <- compute_distance(LatList,LongList,timeseq)
+  plottbl$nextLat <- c(plottbl$Latitude[2:nrow(plottbl)],plottbl$Latitude[nrow(plottbl)])
+  plottbl$nextLng <- c(plottbl$Longitude[2:nrow(plottbl)],plottbl$Longitude[nrow(plottbl)])
 
-  colpal <- leaflet::colorNumeric(palette = "RdYlGn", domain = disttbl$Speed.kmph)
-  color <- colpal(disttbl$Speed.kmph)
+  colpal <- leaflet::colorNumeric(palette = "RdYlGn", domain = plottbl$Speed.kmph)
+  plottbl$color <- colpal(plottbl$Speed.kmph)
 
-  plottbl <- disttbl %>%
-    dplyr::mutate(nextLat = lead(Latitude),nextLng = lead(Longitude),color = color)
-
-  map <- leaflet(plottbl) %>% addTiles(options = tileOptions(opacity=0.7))
+  map <- leaflet::leaflet(plottbl)
+  map <- leaflet::addTiles(map,options = leaflet::tileOptions(opacity=0.7))
 
   for (i in 1:(nrow(plottbl)-1)) {
-    map <- addPolylines(map = map, data = plottbl,
+    map <- leaflet::addPolylines(map = map, data = plottbl,
                         lng = as.numeric(plottbl[i, c('Longitude', 'nextLng')]),
                         lat = as.numeric(plottbl[i, c('Latitude', 'nextLat')]),
                         color = as.character(plottbl[i, c('color')]),
                         opacity=1, fillOpacity =1, weight = 5)
   }
 
-  map <- map %>% addLegend(position = "bottomright", pal = colpal, values = plottbl$Speed.kmph,
-                           title = "Speed",opacity = 1) %>%
-    addRectangles(boxlist[1,],boxlist[2,],boxlist[3,],boxlist[4,],
+  map <- leaflet::addLegend(map,position = "bottomright", pal = colpal,
+                   values = plottbl$Speed.kmph,title = "Speed",opacity = 1)
+  map <- leaflet::addRectangles(map, boxlist[1,],boxlist[2,],boxlist[3,],boxlist[4,],
                   opacity = 0.7, weight = 3, color = "blue",
                   fillColor = "transparent",dashArray = "1",
-                  highlightOptions = highlightOptions(weight = 3,
-                                                      color = "navy",fillColor="transparent",opacity = 1))
+                  highlightOptions = leaflet::highlightOptions(weight = 3,
+                  color = "navy",fillColor="transparent",opacity = 1))
   return(map)
 }
 
@@ -106,11 +106,11 @@ compute_distance <- function(LatList, LongList,timeseq){
   latlong <- data.frame(LatList,LongList,timeseq)
   latlong <- latlong[order(latlong$timeseq),]
 
-  latlong <- latlong %>% mutate(lastLat = lag(LatList),lasttLng = lag(LongList))
+  latlong$LastLat <- c(LatList[1],LatList[1:(length(LatList)-1)])
+  latlong$LastLng <- c(LongList[1],LongList[1:(length(LongList)-1)])
 
   distvec <- geosphere::distHaversine(cbind(latlong$LongList,latlong$LatList),
-                                      cbind(latlong$lasttLng,latlong$lastLat))/1000
-  distvec[1] <- 0
+                                      cbind(latlong$LastLng,latlong$LastLat))/1000
 
   timediff <- c(1/3600,diff(as.numeric(latlong$timeseq))/3600)
 
@@ -122,5 +122,6 @@ compute_distance <- function(LatList, LongList,timeseq){
 
   return(disttbl)
 }
+
 
 

@@ -36,7 +36,8 @@ InitProj <- "+init=epsg:4326"
 #converts the GPS coordinates to OSM CRS
 convert_crs(LatList,LongList,InitProj)
 
-NextProj <- "+init=epsg:4121 +proj=longlat +ellps=GRS80 +datum=GGRS87 +no_defs +towgs84=-199.87,74.79,246.62"
+NextProj <- "+init=epsg:4121 +proj=longlat +ellps=GRS80
++datum=GGRS87 +no_defs +towgs84=-199.87,74.79,246.62"
 
 #converts the GPS coordinates to a selected projection
 convert_crs(LatList,LongList,InitProj,NextProj)

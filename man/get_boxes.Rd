@@ -4,8 +4,8 @@
 \alias{get_boxes}
 \title{Generating Bounding Boxes}
 \usage{
-get_boxes(LatList, LongList, timeseq, resolution = 100,
-  offLong = 0.001, offLat = 0.001)
+get_boxes(LatList, LongList, timeseq, resolution = 5, offLong = 0.001,
+  offLat = 0.001)
 }
 \arguments{
 \item{LatList}{A vector of size \emph{n} for latitudes collected from a GPS recording device}

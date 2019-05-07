@@ -77,7 +77,7 @@ interpolate_coords <- function(LatList,LongList,timeseq,timeint=1) {
   timeseq <- coordtbl$timeseq
 
   timeseq <- as.numeric(timeseq)
-  fulltimeseq <- seq(timeseq[1],tail(timeseq,1),by=timeint)
+  fulltimeseq <- seq(timeseq[1],timeseq[length(timeseq)],by=timeint)
 
   if (length(fulltimeseq)<2) {
       warning("Time interval provided is so large comparing to the overall duration")

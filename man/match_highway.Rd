@@ -36,7 +36,7 @@ match_highway(LatList, LongList, timeseq, k,
 \code{\link{match_highway}} return a vector of size \emph{n} for highway link IDs based on \href{https://www.openstreetmap.org}{OpenStreetMap}
 }
 \description{
-Snap a set of GPS coordinates to the \href{https://www.openstreetmap.org}{OpenStreetMap (OSM)} data highways. This function facilitates the common process in two ways:
+Snap a set of GPS coordinates in WGS84 to the \href{https://www.openstreetmap.org}{OpenStreetMap (OSM)} data highways. This function facilitates the common process in two ways:
 \itemize{
   \item Dividing the whole region into bounding boxes, which allows using the OSM data through API sourcing instead of setting up an OSM data server
   \item Implementation of a fast K-Nearest Neighbor method to find the closest K links to each GPS coordinate

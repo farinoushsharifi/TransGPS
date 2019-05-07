@@ -49,7 +49,7 @@
 #' #generates two bounding boxes
 #' get_boxes(LatList, LongList, timeseq, resolution=0.1,offLong,offLat)
 
-get_boxes <- function(LatList, LongList, timeseq, resolution=100, offLong=0.001,offLat=0.001){
+get_boxes <- function(LatList, LongList, timeseq, resolution=5, offLong=0.001,offLat=0.001){
 
   if (length(LatList)!=length(LongList)) {
     stop("Latitude and longitude lists do not have the same length")
@@ -112,13 +112,13 @@ get_boxes <- function(LatList, LongList, timeseq, resolution=100, offLong=0.001,
     disttbl$boxcuts <- factor(cut(disttbl$CumulativeDistance.km,distintervals, labels = seq(1,distintervals,1)))
     disttbl$boxcuts <- factor(disttbl$boxcuts,labels = seq(1,nlevels(disttbl$boxcuts),1))
 
-    Latmax <- aggregate(disttbl$Latitude, list(disttbl$boxcuts), max)$x
-    Latmin <- aggregate(disttbl$Latitude, list(disttbl$boxcuts), min)$x
-    Longmax <- aggregate(disttbl$Longitude, list(disttbl$boxcuts), max)$x
-    Longmin <- aggregate(disttbl$Longitude, list(disttbl$boxcuts), min)$x
-    Timemax <- aggregate(disttbl$DateTime, list(disttbl$boxcuts), max)$x
-    Timemin <- aggregate(disttbl$DateTime, list(disttbl$boxcuts), min)$x
-    Distsum <- aggregate(disttbl$Distance.km, list(disttbl$boxcuts), sum)$x
+    Latmax <- stats::aggregate(disttbl$Latitude, list(disttbl$boxcuts), max)$x
+    Latmin <- stats::aggregate(disttbl$Latitude, list(disttbl$boxcuts), min)$x
+    Longmax <- stats::aggregate(disttbl$Longitude, list(disttbl$boxcuts), max)$x
+    Longmin <- stats::aggregate(disttbl$Longitude, list(disttbl$boxcuts), min)$x
+    Timemax <- stats::aggregate(disttbl$DateTime, list(disttbl$boxcuts), max)$x
+    Timemin <- stats::aggregate(disttbl$DateTime, list(disttbl$boxcuts), min)$x
+    Distsum <- stats::aggregate(disttbl$Distance.km, list(disttbl$boxcuts), sum)$x
 
     aggdatatbl <- data.frame("Max Latitude" = Latmax,"Min Latitude" = Latmin,
                              "Max Longitude" = Longmax,"Min Longitude" = Longmin,
@@ -149,11 +149,11 @@ compute_distance <- function(LatList, LongList,timeseq){
   latlong <- data.frame(LatList,LongList,timeseq)
   latlong <- latlong[order(latlong$timeseq),]
 
-  latlong <- latlong %>% mutate(lastLat = lag(LatList),lasttLng = lag(LongList))
+  latlong$LastLat <- c(LatList[1],LatList[1:(length(LatList)-1)])
+  latlong$LastLng <- c(LongList[1],LongList[1:(length(LongList)-1)])
 
   distvec <- geosphere::distHaversine(cbind(latlong$LongList,latlong$LatList),
-                                       cbind(latlong$lasttLng,latlong$lastLat))/1000
-  distvec[1] <- 0
+                                       cbind(latlong$LastLng,latlong$LastLat))/1000
 
   timediff <- c(1/3600,diff(as.numeric(latlong$timeseq))/3600)
 

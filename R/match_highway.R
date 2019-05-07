@@ -1,6 +1,6 @@
 #' Coordinates Map Matching
 #'
-#' Snap a set of GPS coordinates to the \href{https://www.openstreetmap.org}{OpenStreetMap (OSM)} data highways. This function facilitates the common process in two ways:
+#' Snap a set of GPS coordinates in WGS84 to the \href{https://www.openstreetmap.org}{OpenStreetMap (OSM)} data highways. This function facilitates the common process in two ways:
 #' \itemize{
 #'   \item Dividing the whole region into bounding boxes, which allows using the OSM data through API sourcing instead of setting up an OSM data server
 #'   \item Implementation of a fast K-Nearest Neighbor method to find the closest K links to each GPS coordinate
@@ -65,16 +65,13 @@ match_highway <- function (LatList, LongList, timeseq, k,
                            osmlink = "https://api.openstreetmap.org/api/0.6/") {
 
   if(missing(boxcuts) & missing(boxlist)) {
-    warning("boxcuts and boxlists are missing. In this case, the function will generate both from the get_boxes function and the input resolution, offLong, and offLat")
     boxcuts = as.numeric(get_boxes(LatList,LongList,timeseq,resolution,offLong,offLat)$boxtable$boxcuts)
     boxlist = as.matrix(get_boxes(LatList,LongList,timeseq,resolution,offLong,offLat)$boxlist)
   }
 
   if(!(identical(missing(boxcuts),missing(boxlist)))) {
-      warning("boxcuts and boxlists should be both given to the function or let the function generate it to assure the compatibility. In this case, the function will generate both from the get_boxes function and the input resolution, offLong, and offLat")
-      boxcuts = as.numeric(get_boxes(LatList,LongList,timeseq,resolution,offLong,offLat)$boxtable$boxcuts)
-      boxlist = as.matrix(get_boxes(LatList,LongList,timeseq,resolution,offLong,offLat)$boxlist)
-  }
+      stop("boxcuts and boxlists should be both given to the function or let the function generate it to assure the compatibility")
+    }
 
   if (length(LatList)!=length(LongList)) {
     stop("Latitude and longitude lists do not have the same length")
@@ -162,7 +159,7 @@ match_highway <- function (LatList, LongList, timeseq, k,
       nnmat <- matrix(hwaynodetbl[matrix(nnmat$nn.idx,ncol = k),1],ncol = k)
 
       for(j in 1:nrow(nnmat)){
-        hwaylist <- unique(osmar::find_up(hwaysdata, node(nnmat[j,]))$way_ids)
+        hwaylist <- unique(osmar::find_up(hwaysdata, osmar::node(nnmat[j,]))$way_ids)
         count <- length(hwaylist)
         if (count>k) {
           count <- k
@@ -171,18 +168,24 @@ match_highway <- function (LatList, LongList, timeseq, k,
       }
   }
 
+  linklist <- highway[,1]
 
-  highway <- cbind("PointNumber"=seq(1,length(LatList)),as.data.frame(highway))
+  k1lag <- c(highway[1,1],highway[1:(nrow(highway)-1),1])
+  k1lead <- c(highway[2:nrow(highway),1],highway[nrow(highway),2])
 
-  highway <- highway%>% dplyr::mutate(k1lag = lag(V1), k1lead = lead(V1))
-  PointID <- highway[(highway$V1!=highway$k1lag)&(highway$k1lag==highway$k1lead),]$PointNumber
-  PointID <- PointID[!is.na(PointID)]
 
-  highway$V1[PointID] <- highway$k1lag[PointID]
+  for(ind in 1:nrow(highway)) {
+    if(is.na(highway[ind,2])==FALSE) {
+      if ((highway[ind,1]!=k1lag[ind])&
+          (k1lag[ind]==k1lead[ind])) {
+        if (any(highway[ind,2:k][!is.na(highway[ind,2:k])]==k1lag[ind])) {
+          linklist[ind] <- k1lag[ind]
+        }
+      }
+    }
+  }
 
-  highway <- list(highway$V1)
-
-  return("HighwayLinkID"=highway)
+  return("HighwayLinkID"=linklist)
 }
 
 
