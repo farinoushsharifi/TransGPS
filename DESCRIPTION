@@ -1,6 +1,6 @@
 Package: TransGPS
 Title: Easy Analysis of GPS Data
-Depends:zoo,geosphere,leaflet,RANN,dplyr,osmar,sp
+Imports:zoo,geosphere,leaflet,RANN,dplyr,osmar,sp,rgdal,stats,utils
 Suggests:
     testthat,
     knitr,
