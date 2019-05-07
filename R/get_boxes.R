@@ -90,7 +90,7 @@ get_boxes <- function(LatList, LongList, timeseq, resolution=100, offLong=0.001,
   timeseq <- disttbl$DateTime
 
   if (any(resolution < disttbl$Distance.km)) {
-    warning("Resolution is at least smaller than one recorded time interval")
+    warning("Resolution is at least smaller than one interval distance")
   }
 
   totaldist <- disttbl$CumulativeDistance.km[nrow(disttbl)]

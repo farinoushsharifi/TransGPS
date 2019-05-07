@@ -148,6 +148,14 @@ match_highway <- function (LatList, LongList, timeseq, k,
 
       hwaynodetbl <- hwaysdata$nodes$attrs
 
+      if (k>nrow(hwaynodetbl)) {
+        warning("k is bigger than the available nodes")
+        k <- nrow(hwaynodetbl)
+      }
+      if ((nrow(hwaynodetbl)==0)|(length(LongList[boxcuts==i])==0)) {
+        warning("There is at least one point with no nodes close")
+        next()
+      }
 
       nnmat <- RANN::nn2(cbind(hwaynodetbl$lon, hwaynodetbl$lat),
                          cbind(LongList[boxcuts==i], LatList[boxcuts==i]),k)
