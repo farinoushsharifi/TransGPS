@@ -48,6 +48,8 @@
 #'
 plot_route <- function(LatList, LongList, timeseq, boxlist=as.matrix(osmar::corner_bbox(min(LongList),min(LatList),max(LongList),max(LatList)))) {
 
+  ### Compatibility checks for the class and length of input data
+
   if (length(LatList)!=length(LongList)) {
     stop("Latitude and longitude lists do not have the same length")
   }
@@ -72,16 +74,23 @@ plot_route <- function(LatList, LongList, timeseq, boxlist=as.matrix(osmar::corn
     stop("bounding box list is not a matrix of 4 rows")
   }
 
+  ### Computing the speed of each link
 
   plottbl <- compute_distance(LatList,LongList,timeseq)
   plottbl$nextLat <- c(plottbl$Latitude[2:nrow(plottbl)],plottbl$Latitude[nrow(plottbl)])
   plottbl$nextLng <- c(plottbl$Longitude[2:nrow(plottbl)],plottbl$Longitude[nrow(plottbl)])
 
+  ### creating color and plot table
+
   colpal <- leaflet::colorNumeric(palette = "RdYlGn", domain = plottbl$Speed.kmph)
   plottbl$color <- colpal(plottbl$Speed.kmph)
 
+  ### Creating a map platform
+
   map <- leaflet::leaflet(plottbl)
   map <- leaflet::addTiles(map,options = leaflet::tileOptions(opacity=0.7))
+
+  ### adding various colors for speed on the links
 
   for (i in 1:(nrow(plottbl)-1)) {
     map <- leaflet::addPolylines(map = map, data = plottbl,
@@ -90,6 +99,8 @@ plot_route <- function(LatList, LongList, timeseq, boxlist=as.matrix(osmar::corn
                         color = as.character(plottbl[i, c('color')]),
                         opacity=1, fillOpacity =1, weight = 5)
   }
+
+  ### Adding legend and bounding boxes
 
   map <- leaflet::addLegend(map,position = "bottomright", pal = colpal,
                    values = plottbl$Speed.kmph,title = "Speed",opacity = 1)
@@ -101,13 +112,19 @@ plot_route <- function(LatList, LongList, timeseq, boxlist=as.matrix(osmar::corn
   return(map)
 }
 
+### An internal function to compute distance and speed
+
 compute_distance <- function(LatList, LongList,timeseq){
+
+  ### Timeordering input data
 
   latlong <- data.frame(LatList,LongList,timeseq)
   latlong <- latlong[order(latlong$timeseq),]
 
   latlong$LastLat <- c(latlong$LatList[1],latlong$LatList[1:(length(latlong$LatList)-1)])
   latlong$LastLng <- c(latlong$LongList[1],latlong$LongList[1:(length(latlong$LongList)-1)])
+
+  ### Computing the distance and time difference
 
   distvec <- geosphere::distHaversine(cbind(latlong$LongList,latlong$LatList),
                                       cbind(latlong$LastLng,latlong$LastLat))/1000

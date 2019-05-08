@@ -33,6 +33,8 @@
 #'
 convert_crs <- function(LatList,LongList,InitProj,NextProj = NULL) {
 
+  ### Compatibilit checks on the class and length of the input
+
   if (length(LatList)!=length(LongList)) {
     stop("Latitude and longitude lists do not have the same length")
   }
@@ -40,6 +42,8 @@ convert_crs <- function(LatList,LongList,InitProj,NextProj = NULL) {
   if ((any(class(LatList)!="numeric"))|(any(class(LongList)!="numeric"))) {
     stop("Latitude and longitude lists must be numeric")
   }
+
+  ### Compatibilit checks on the class of initial projection
 
   if (class(InitProj)!="character") {
     stop("InitProj should be strings of characters")
@@ -54,6 +58,8 @@ convert_crs <- function(LatList,LongList,InitProj,NextProj = NULL) {
   } else {
     InitCRS <- sp::CRS(InitProj)
   }
+
+  ### Compatibilit checks on the class of next projection and assignment of a new one
 
   if (is.null(NextProj)!=TRUE) {
     if(class(NextProj)!="character") {
@@ -73,10 +79,17 @@ convert_crs <- function(LatList,LongList,InitProj,NextProj = NULL) {
     NextCRS <- osmar::osm_crs()
   }
 
+  ### Creating a table and linking the coordinates to initial projection
+
   latlong <- data.frame(lon=LongList, lat=LatList)
   sp::coordinates(latlong) <- c("lon", "lat")
   sp::proj4string(latlong) <- InitCRS
+
+  ### Transforming the coordinates to the secondary projection
+
   latlong <- sp::spTransform(latlong, NextCRS)
+
+  ### Returning a list of projected coordinates
 
   return(list("Latitude"=latlong@coords[,2], "Longitude"=latlong@coords[,1]))
 

@@ -51,6 +51,8 @@
 
 get_boxes <- function(LatList, LongList, timeseq, resolution=5, offLong=0.001,offLat=0.001){
 
+  ### Compatibilit checks on the length of coordinates and timeseq
+
   if (length(LatList)!=length(LongList)) {
     stop("Latitude and longitude lists do not have the same length")
   }
@@ -59,6 +61,8 @@ get_boxes <- function(LatList, LongList, timeseq, resolution=5, offLong=0.001,of
     stop("Latitude and time sequence lists do not have the same length")
   }
 
+  ### Ensuring offLong and offLat are positive numbers
+
   if ((!(offLong>0))|(!(offLat>0))) {
     stop("offLong and offLat should be positive decimal degrees")
   }
@@ -66,6 +70,8 @@ get_boxes <- function(LatList, LongList, timeseq, resolution=5, offLong=0.001,of
   if (!(resolution>0)) {
     stop("Resolution should be positive distances in kilometers")
   }
+
+  ### Compatibilit checks on the class of inputs
 
   if ((any(class(LatList)!="numeric"))|(any(class(LongList)!="numeric"))) {
     stop("Latitude and longitude lists must be numeric")
@@ -83,19 +89,26 @@ get_boxes <- function(LatList, LongList, timeseq, resolution=5, offLong=0.001,of
     stop("offLat and offLong must be numeric")
   }
 
-  disttbl <- compute_distance(LatList,LongList,timeseq)
+  ### Computing the distance at each time sequence
 
+  disttbl <- compute_distance(LatList,LongList,timeseq)
   LatList <- disttbl$Latitude
   LongList <- disttbl$Longitude
   timeseq <- disttbl$DateTime
+
+  totaldist <- disttbl$CumulativeDistance.km[nrow(disttbl)]
+
+  ### Warning for small resolution
 
   if (any(resolution < disttbl$Distance.km)) {
     warning("Resolution is at least smaller than one interval distance")
   }
 
-  totaldist <- disttbl$CumulativeDistance.km[nrow(disttbl)]
+  ### Creating bounding box
 
   if (totaldist < resolution) {
+
+    ### Creating one bounding box for large resolution
 
     boxlist <- osmar::corner_bbox(min(LongList)-offLong,
                                  min(LatList)-offLat,
@@ -106,11 +119,19 @@ get_boxes <- function(LatList, LongList, timeseq, resolution=5, offLong=0.001,of
     boxlist <- cbind(boxlist)
     colnames(boxlist) <- "Group 1"
     disttbl$boxcuts <- 1
+
+    ### Warning on large resolution
+
     warning("Resolution is too large for this area, only one box has been generated")
   } else {
+
+    ### Splitting the data based on the resolution
+
     distintervals <- floor(totaldist/resolution)+1
     disttbl$boxcuts <- factor(cut(disttbl$CumulativeDistance.km,distintervals, labels = seq(1,distintervals,1)))
     disttbl$boxcuts <- factor(disttbl$boxcuts,labels = seq(1,nlevels(disttbl$boxcuts),1))
+
+    ### Aggregating the data over each group
 
     Latmax <- stats::aggregate(disttbl$Latitude, list(disttbl$boxcuts), max)$x
     Latmin <- stats::aggregate(disttbl$Latitude, list(disttbl$boxcuts), min)$x
@@ -125,6 +146,9 @@ get_boxes <- function(LatList, LongList, timeseq, resolution=5, offLong=0.001,of
                              "Start Time" = Timemin, "End Time" = Timemax, "Total Distance.km" =Distsum )
 
     boxlist <- c()
+
+    ### Creating a bounding box for each group based on the four corners
+
     for(i in 1:nrow(aggdatatbl)) {
 
       newbox <- osmar::corner_bbox(aggdatatbl$Min.Longitude[i]-offLong,
@@ -138,13 +162,19 @@ get_boxes <- function(LatList, LongList, timeseq, resolution=5, offLong=0.001,of
     colnames(boxlist) <- paste("Group",seq(1,nrow(aggdatatbl),1),sep = "")
   }
 
+  ### Creating a list for the final result
+
   boxtable <- disttbl[,c("DateTime","Latitude","Longitude","boxcuts")]
   boxtable$boxcuts <- as.numeric(boxtable$boxcuts)
   return(list("boxlist"=as.matrix(boxlist), "boxtable"=boxtable))
 }
 
 
+### This function computes the distance and speed
+
 compute_distance <- function(LatList, LongList,timeseq){
+
+  ### Time ordering the data
 
   latlong <- data.frame(LatList,LongList,timeseq)
   latlong <- latlong[order(latlong$timeseq),]
@@ -152,10 +182,14 @@ compute_distance <- function(LatList, LongList,timeseq){
   latlong$LastLat <- c(latlong$LatList[1],latlong$LatList[1:(length(latlong$LatList)-1)])
   latlong$LastLng <- c(latlong$LongList[1],latlong$LongList[1:(length(latlong$LongList)-1)])
 
+  ### Computing the distance and time difference for speed
+
   distvec <- geosphere::distHaversine(cbind(latlong$LongList,latlong$LatList),
                                        cbind(latlong$LastLng,latlong$LastLat))/1000
 
   timediff <- c(1/3600,diff(as.numeric(latlong$timeseq))/3600)
+
+  ### Creating and returning a table of total vehicle traveled, speed, and average speed at each time
 
   disttbl <- data.frame("PointNumber"=seq(1,nrow(latlong),1), "Latitude"=latlong$LatList,
                         "Longitude"=latlong$LongList, "DateTime"=latlong$timeseq,

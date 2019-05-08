@@ -22,14 +22,14 @@
 #'
 #' @examples
 #'
-#' LatList <- c(31.67514,31.675195,31.67525,
-#' 31.675304,31.675356,31.675408,31.675467,
-#' 31.675517,31.675569,31.675623)
+#' LatList <- c(31.67514,31.675195,31.67625,
+#' 31.676304,31.676356,31.677408,31.677467,
+#' 31.677517,31.677569,31.677623)
 #'
 #' LongList <- c(-106.326522,-106.326367,
-#' -106.326211,-106.326058,-106.325901,
-#' -106.325739,-106.325572,-106.32541,
-#' -106.325247,-106.325092)
+#' -106.326111,-106.325958,-106.325901,
+#' -106.325639,-106.325372,-106.32441,
+#' -106.324247,-106.324092)
 #'
 #' timeseq <- c("2019-04-29 15:20:51",
 #' "2019-04-29 15:21:03","2019-04-29 15:21:06",
@@ -40,7 +40,7 @@
 #'
 #' timeseq <- as.POSIXct(timeseq)
 #'
-#' k=5
+#' k=3
 #'
 #' resolution <- 0.1
 #' offLong=0.001
@@ -64,10 +64,16 @@ match_highway <- function (LatList, LongList, timeseq, k,
                            resolution = 5, offLong = 0.001, offLat = 0.001,
                            osmlink = "https://api.openstreetmap.org/api/0.6/")  {
 
+  ### Assigning a value to the boxcuts and boxlist if missing
+  ### If only one is provided, should return an error
+  ### of both is provided, we need to sort the coordinates, and boxcuts based on time
+
   if(missing(boxcuts) & missing(boxlist)) {
     boxout <- get_boxes(LatList,LongList,timeseq,resolution,offLong,offLat)
     boxcuts = as.numeric(boxout$boxtable$boxcuts)
     boxlist = as.matrix(boxout$boxlist)
+
+    ### output the ordered coordinates and timeseq
 
     LatList <- boxout$boxtable$Latitude
     LongList <- boxout$boxtable$Longitude
@@ -76,14 +82,19 @@ match_highway <- function (LatList, LongList, timeseq, k,
   } else if (!(identical(missing(boxcuts),missing(boxlist)))) {
     stop("boxcuts and boxlists should be both given to the function or let the function generate it to assure the compatibility")
   } else {
-    latlong <- data.frame(LatList,LongList,timeseq, boxcuts)
-    latlong <- latlong[order(latlong$timeseq),]
 
-    LatList <- latlong$LatList
-    LongList <- latlong$LongList
-    timeseq <- latlong$timeseq
-    boxcuts <- latlong$boxcuts
+    ### Sorting the data in case of provided input
+
+    boxtable <- data.frame(LatList,LongList,timeseq, boxcuts)
+    boxtable <- boxtable[order(boxtable$timeseq),]
+
+    LatList <- boxtable$LatList
+    LongList <- boxtable$LongList
+    timeseq <- boxtable$timeseq
+    boxcuts <- boxtable$boxcuts
   }
+
+  ### Compatibility checks for length of input data
 
   if (length(LatList)!=length(LongList)) {
     stop("Latitude and longitude lists do not have the same length")
@@ -93,9 +104,23 @@ match_highway <- function (LatList, LongList, timeseq, k,
     stop("Latitude and time sequence lists do not have the same length")
   }
 
+  ### Ensuring k is a positive integer
+
   if ((k!= round(k))|(k<0)|(k==0)){
     stop("k is not acceptable, please enter a positive integer")
   }
+
+  ### Ensuring offLong,offLat,resolution is a positive number
+
+  if ((!(offLong>0))|(!(offLat>0))) {
+    stop("offLong and offLat should be positive decimal degrees")
+  }
+
+  if (!(resolution>0)) {
+    stop("Resolution should be positive distances in kilometers")
+  }
+
+  ### Ensuring boxcuts are provided for all data, and there are some compatible boxes
 
   if (length(LatList)!=length(boxcuts)) {
     stop("Latitude and bounding box cut lists do not have the same length")
@@ -105,13 +130,11 @@ match_highway <- function (LatList, LongList, timeseq, k,
     stop("bounding box lists do not have any data")
   }
 
-  if ((!(offLong>0))|(!(offLat>0))) {
-    stop("offLong and offLat should be positive decimal degrees")
+  if ((nlevels(factor(boxcuts))!=ncol(boxlist))) {
+    stop("bounding box list and box cuts are not compatible in terms of number of boxes")
   }
 
-  if (!(resolution>0)) {
-    stop("Resolution should be positive distances in kilometers")
-  }
+  ### Compatibility checks on the class of the input data
 
   if ((any(class(LatList)!="numeric"))|(any(class(LongList)!="numeric"))) {
     stop("Latitude and longitude lists must be numeric")
@@ -129,10 +152,6 @@ match_highway <- function (LatList, LongList, timeseq, k,
     stop("bounding box list is not a matrix of 4 rows")
   }
 
-  if ((nlevels(factor(boxcuts))!=ncol(boxlist))) {
-    stop("bounding box list and box cuts are not compatible in terms of number of boxes")
-  }
-
   if (class(resolution)!="numeric") {
     stop("Resolution must be numeric")
   }
@@ -141,22 +160,21 @@ match_highway <- function (LatList, LongList, timeseq, k,
     stop("offLat and offLong must be numeric")
   }
 
-  latlong <- data.frame(LatList,LongList,timeseq, boxcuts)
-  latlong <- latlong[order(latlong$timeseq),]
-
-  LatList <- latlong$LatList
-  LongList <- latlong$LongList
-  timeseq <- latlong$timeseq
-  boxcuts <- latlong$boxcuts
+  ### Linking to API source and creating the output space
 
   api <- osmar::osmsource_api(osmlink)
   highway <-  matrix(0,nrow=length(LatList),ncol=k)
 
+  ### Highway node matching within each box
 
   for (i in 1:ncol(boxlist)) {
 
+    ### Accessing the OSM data
+
       mapbox <- osmar::corner_bbox(boxlist[1,i],boxlist[2,i],boxlist[3,i],boxlist[4,i])
       location <- osmar::get_osm(mapbox, source = api)
+
+    ### Accessing the highway database of each location and creaing a highway nodes table
 
       hwaysdata <- subset(location, way_ids = osmar::find(location, osmar::way(osmar::tags(k == "highway"))))
       hways <- osmar::find(hwaysdata, osmar::way(osmar::tags(k == "name")))
@@ -164,6 +182,8 @@ match_highway <- function (LatList, LongList, timeseq, k,
       hwaysdata <- subset(location, ids = hways)
 
       hwaynodetbl <- hwaysdata$nodes$attrs
+
+    ### Cheking if k is smaller than available nodes or there are any close nodes
 
       if (k>nrow(hwaynodetbl)) {
         warning("k is bigger than the available nodes")
@@ -174,21 +194,40 @@ match_highway <- function (LatList, LongList, timeseq, k,
         next()
       }
 
+    ### Creating a distance matrix between coordinate and highway node
+
       nnmat <- RANN::nn2(cbind(hwaynodetbl$lon, hwaynodetbl$lat),
                          cbind(LongList[boxcuts==i], LatList[boxcuts==i]),k)
       nnmat <- matrix(hwaynodetbl[matrix(nnmat$nn.idx,ncol = k),1],ncol = k)
 
+    ### Find the k least distance for each coordinate and the corresponding highways
+
       for(j in 1:nrow(nnmat)){
         hwaylist <- unique(osmar::find_up(hwaysdata, osmar::node(nnmat[j,]))$way_ids)
+
         count <- length(hwaylist)
+        coordno <- length(highway[boxcuts==i,1:k])/k
+
         if (count>k) {
           count <- k
         }
-        highway[boxcuts==i,][j,1:k] <- hwaylist[1:k]
+
+        if(count==0) {
+          highway[boxcuts==i,][j,1:k] <- 0
+        } else if (coordno==1) {
+          highway[boxcuts==i,1:k] <- hwaylist[1:k]
+        } else {
+          highway[boxcuts==i,1:k][j,] <- hwaylist[1:k]
+        }
       }
   }
 
+  ### Assigning the closest highway link to output
+
   linklist <- highway[,1]
+
+  ### checking if the previous and next highway links within the output is within the k closest
+  ### Assigning that ID to the output
 
   k1lag <- c(highway[1,1],highway[1:(nrow(highway)-1),1])
   k1lead <- c(highway[2:nrow(highway),1],highway[nrow(highway),2])
@@ -204,6 +243,8 @@ match_highway <- function (LatList, LongList, timeseq, k,
       }
     }
   }
+
+  ### Returning a list of matched IDs
 
   return("HighwayLinkID"=linklist)
 }

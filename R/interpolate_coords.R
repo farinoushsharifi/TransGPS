@@ -37,6 +37,8 @@
 #' interpolate_coords(LatList,LongList,timeseq,60)
 interpolate_coords <- function(LatList,LongList,timeseq,timeint=1) {
 
+  ### Compatibility checks for the length and class of input data
+
   if (is.null(LatList)==TRUE) {
     stop("No latitude list have been reported")
   }
@@ -69,6 +71,8 @@ interpolate_coords <- function(LatList,LongList,timeseq,timeint=1) {
     stop("Time increment should be numeric")
   }
 
+  ### Creating a time ordered table of input
+
   coordtbl <- data.frame(LatList,LongList,timeseq)
   coordtbl <- coordtbl[order(coordtbl$timeseq),]
 
@@ -76,15 +80,23 @@ interpolate_coords <- function(LatList,LongList,timeseq,timeint=1) {
   LongList <- coordtbl$LongList
   timeseq <- coordtbl$timeseq
 
+  ### Creating a sequence of desired intervals
+
   timeseq <- as.numeric(timeseq)
   fulltimeseq <- seq(timeseq[1],timeseq[length(timeseq)],by=timeint)
+
+  ### Warning for large intervals
 
   if (length(fulltimeseq)<2) {
       warning("Time interval provided is so large comparing to the overall duration")
   }
 
+  ### Interpolating the coordinates
+
   fulltimetbl <- zoo::zoo(cbind(LatList,LongList),timeseq)
   resultlist <- zoo::na.approx(fulltimetbl,xout = fulltimeseq)
+
+  ### Returning output table
 
   timecol <- as.POSIXct(as.numeric(as.character(rownames(as.matrix(resultlist)))),origin = "1970-01-01 00:00.00 UTC")
   resulttbl <- data.frame(timecol,matrix(resultlist, ncol = 2))
