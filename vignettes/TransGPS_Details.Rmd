@@ -1,16 +1,23 @@
 ---
-title: "TransGPS Package"
-author: "Farinoush Sharifi"
-
-output: 
-  github_document:
-        toc: true
-        toc_depth: 4
-  
+title: "TransGPS_Details"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{TransGPS_Details}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE,tidy='formatR', tidy.opts=list(width.cutoff = 70))
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  echo = TRUE,tidy='formatR', 
+  tidy.opts=list(width.cutoff = 70)
+)
+```
+
+```{r setup, echo=FALSE}
+library(TransGPS)
 ```
 
 ## TransGPS: Toward a better analysis of GPS data

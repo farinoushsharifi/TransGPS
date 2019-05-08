@@ -1,21 +1,20 @@
 TransGPS Package
 ================
 Farinoush Sharifi
-May 2019
 
   - [TransGPS: Toward a better analysis of GPS
     data](#transgps-toward-a-better-analysis-of-gps-data)
-      - [Installation](#installation)
-      - [Usage](#usage)
-          - [1. Coordinates Conversion to New
-            CRS](#coordinates-conversion-to-new-crs)
-          - [2. Coordinates Interpolation](#coordinates-interpolation)
-          - [Generate Bounding Boxes](#generate-bounding-boxes)
-          - [Iteration Over Bounding
-            Boxes](#iteration-over-bounding-boxes)
-          - [Matching The OSM Link IDs to GPS
-            Coordinates](#matching-the-osm-link-ids-to-gps-coordinates)
-      - [Details](#details)
+  - [Installation](#installation)
+  - [Usage](#usage)
+      - [1. Coordinates Conversion to New
+        CRS](#coordinates-conversion-to-new-crs)
+      - [2. Coordinates Interpolation](#coordinates-interpolation)
+      - [3. Generate Bounding Boxes](#generate-bounding-boxes)
+      - [4. Plot Link Speed and Bounding
+        Boxes](#plot-link-speed-and-bounding-boxes)
+      - [5. Matching The OSM Link IDs to GPS
+        Coordinates](#matching-the-osm-link-ids-to-gps-coordinates)
+  - [Details](#details)
 
 ## TransGPS: Toward a better analysis of GPS data
 
@@ -32,13 +31,13 @@ interactive platform for the users to find the desired bounding boxes on
 the map. Finally, the user can find the best link match for each GPS
 coordinate.
 
-### Installation
+## Installation
 
 ``` r
 ## devtools::install_github('farinoushsharifi/TransGPS')
 ```
 
-### Usage
+## Usage
 
 ``` r
 library(TransGPS)
@@ -61,7 +60,7 @@ The first 10 rows of the data can be seen here:
     ## 9  31.67557 -106.3252 3:10:04 PM
     ## 10 31.67562 -106.3251 3:10:05 PM
 
-#### 1\. Coordinates Conversion to New CRS
+### 1\. Coordinates Conversion to New CRS
 
 Conversion of the GPS coordinates into a new CRS is the base to initiate
 any GPS analysis studies. `convert_crs` takes the initial latitude and
@@ -99,7 +98,7 @@ The first 10 rows of the converted data can be seen here:
     ## 9            6439597           -8105372
     ## 10           6439573           -8105362
 
-#### 2\. Coordinates Interpolation
+### 2\. Coordinates Interpolation
 
 Intepolation of coordinates over a desired time sequence is so useful in
 case of irregular time sequence or better visualization of data on
@@ -138,20 +137,81 @@ timeseq2 <- SampleTransGPS_ir$First.Time
 timeseq2 <- as.POSIXct(timeseq2, format = "%I:%M:%S %p")
 timeint <- 2  ###2 seconds
 
+# interpolate the GPS coordinates
 interp_data <- interpolate_coords(LatList2, LongList2, timeseq2, timeint)
 ```
 
-#### Generate Bounding Boxes
+The first 10 rows of this interpolated datacan be seen here:
 
-#### Iteration Over Bounding Boxes
+    ##               DateTime Latitude Longitude
+    ## 1  2019-05-07 15:10:28 31.67680 -106.3208
+    ## 2  2019-05-07 15:10:30 31.67693 -106.3204
+    ## 3  2019-05-07 15:10:32 31.67706 -106.3200
+    ## 4  2019-05-07 15:10:34 31.67719 -106.3195
+    ## 5  2019-05-07 15:10:36 31.67733 -106.3191
+    ## 6  2019-05-07 15:10:38 31.67746 -106.3187
+    ## 7  2019-05-07 15:10:40 31.67759 -106.3182
+    ## 8  2019-05-07 15:10:42 31.67772 -106.3178
+    ## 9  2019-05-07 15:10:44 31.67785 -106.3174
+    ## 10 2019-05-07 15:10:46 31.67799 -106.3170
 
-![](README_files/figure-gfm/pressure3-1.png)<!-- -->
+### 3\. Generate Bounding Boxes
 
-#### Matching The OSM Link IDs to GPS Coordinates
+While working with specific few roads rather than the whole network,
+generating regions and boxes around the corridors helps to better focus
+on the route, instead of the whole area, and remove unnecessary areas or
+roads from the data. So, accessing the OSM data can be easier, less
+challenging, and can be done in small chunks. `get_boxes` function
+splits the corridors in smaller regions by considering a maximum route
+distance of `resolution` within each box. `offLong` and `offLat`are the
+margins of each box from the closest coordinate point. The output gives
+the ID of box (`boxcuts`) for each point as well as the coordinates of
+each box (`boxlists`).
 
-![](README_files/figure-gfm/pressure4-1.png)<!-- -->
+``` r
+# define resolutions and margins
+resolution = 5
+offLong = 0.001
+offLat = 0.002
 
-### Details
+# create boxes
+boxout <- get_boxes(LatList1, LongList1, timeseq1)
+boxcuts <- boxout$boxtable$boxcuts
+boxlist <- boxout$boxlist
+```
+
+### 4\. Plot Link Speed and Bounding Boxes
+
+To better study the bounding boxes generated and estimate the
+`resolution` and margins, `plot_route` function is provided. It also has
+the option to show the average speed of the vehicle on the corridor.
+
+![](README_files/figure-gfm/plot-1.png)<!-- -->
+
+### 5\. Matching The OSM Link IDs to GPS Coordinates
+
+The process of matching the GPS points to the OSM data links or features
+can so challenging and inaccurate. The function `match_highway` in this
+package helps with this process in multiple ways. Firstly, it splits the
+network in few boxes and reduce the tension of accessing the whole OSM
+data at once or setting up a server for “planet.osm” data. Secondly, it
+considers `k` close points rather than the closest point to the
+coordinate. Finally, it tries to keep the route choice
+consistency.
+
+``` r
+IDList <- match_highway(LatList = LatList1, LongList = LongList1, timeseq = timeseq1, 
+    k = 5, boxcuts = boxcuts, boxlist = boxlist)
+```
+
+The output of this function is the list of OSM highway link IDs assigned
+to each
+    point.
+
+    ##  [1] 145425374 145425374 145425374 145425374 145425374 145425374 145425374
+    ##  [8] 145425374 145425374 145425374
+
+## Details
 
 For more information on TransGPS Package, please access the package
-vignettes ![](README_files/figure-gfm/pressure5-1.png)<!-- -->
+documentations or vignettes. Please feel free to contact the author at
