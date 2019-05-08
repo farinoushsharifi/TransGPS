@@ -99,10 +99,7 @@ To better study the bounding boxes generated and estimate the
 `resolution` and margins, `plot_route` function is provided. It also has
 the option to show the average speed of the vehicle on the corridor.
 
-``` r
-# plot the link speeds and bounding boxes
-plot_route(LatList = LatList, LongList = LongList, timeseq = timeseq, boxlist = boxlist)
-```
+![](README_files/figure-gfm/plot-1.png)<!-- -->
 
 ### 5\. Matching The OSM Link IDs to GPS Coordinates
 
