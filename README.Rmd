@@ -11,7 +11,7 @@ output:
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE,tidy='formatR', tidy.opts=list(width.cutoff = 70))
 ```
 
 ## TransGPS: Toward a better analysis of GPS data
@@ -30,46 +30,68 @@ Creating bounding boxes allows the users to access OSM data without any challeng
 
 ```{r attach, echo=T, results='hide', message=F, warning=F, tidy='formatR'}
 library(TransGPS)
+
+### Load Sample Data
+data("SampleTransGPS")
 ```
 
-#### Coordinates Interpolation
+The first 10 rows of the data can be seen here:
 
-The first example shows the use of function `interpolate_coords` :
-```{r interp, tidy='formatR', tidy.opts=list(width.cutoff = 70)}
-# Example 1:
-
-LatList <- c(31.67514,31.675195,31.67525,31.675304,31.675356,
-             31.675408,31.675467,31.675517,31.675569,31.675623)
-
-LongList <- c(-106.326522,-106.326367,-106.326211,-106.326058,
-              -106.325901,-106.325739,-106.325572,-106.32541,
-              -106.325247,-106.325092)
-
-timeseq <- c("2019-04-29 15:20:51","2019-04-29 15:21:03",
-             "2019-04-29 15:21:06","2019-04-29 15:21:15",
-             "2019-04-29 15:21:17","2019-04-29 15:21:32",
-             "2019-04-29 15:21:34","2019-04-29 15:21:51",
-             "2019-04-29 15:22:09","2019-04-29 15:22:36")
-
-timeseq <- as.POSIXct(strptime(timeseq, "%Y-%m-%d %H:%M:%S"))
-
-#regularize time sequence over 1 second
-interp_sec <- interpolate_coords(LatList,LongList,timeseq,1)
-
-#regularize time sequence over 1 minute
-interp_min <- interpolate_coords(LatList,LongList,timeseq,60)
+```{r head data, echo=FALSE}
+head(as.data.frame(SampleTransGPS),10)
 ```
 
-The results of these two interpolations are as followed:
+#### 1. Coordinates Conversion to New CRS
 
-```{r interp results, collapse=TRUE}
-# Outputs
+Conversion of the GPS coordinates into a new CRS is the base to initiate any GPS analysis studies. `convert_crs` takes the initial latitude and longitude of a list of points and convert to any new CRS. The default value for the final projection is `"+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs +towgs84=0,0,0"`, which the CRS corresponding to OSM data (and the CRS for the `SampleTransGPS` data).
 
-#regularized time sequence of 1 second
-head(interp_sec)
+```{r conversion, tidy='formatR', tidy.opts=list(width.cutoff = 70),cache=T}
+#define the conversion function inputs 
+LatList1 <- SampleTransGPS$Latitude  
+LongList1 <- SampleTransGPS$Longitude
+timeseq1 <- SampleTransGPS$First.Time
+timeseq1 <-  as.POSIXct(timeseq1, format = "%I:%M:%S %p")
 
-#regularized time sequence of 1 minute
-head(interp_min)
+InitProj <- "+proj=longlat +ellps=WGS84 
++datum=WGS84 +no_defs +towgs84=0,0,0"
+NextProj <- "+init=epsg:28992"
+
+#convert from the initial CRS to a new one
+convlist <- convert_crs(LatList1,LongList1,InitProj,NextProj)
+```
+
+The first 10 rows of the converted data can be seen here:
+
+```{r head convlist, echo=FALSE }
+head(data.frame(convlist$Latitude,convlist$Longitude),10)
+```
+
+#### 2. Coordinates Interpolation
+
+Intepolation of coordinates over a desired time sequence is so useful in case of irregular time sequence or better visualization of data on contour maps. Function `interpolate_coords` takes the lists of latitudes and longitudes over an irregular time sequence and interpolates coordinates.
+```{r interp data, tidy='formatR', tidy.opts=list(width.cutoff = 70),cache=TRUE}
+#taking a sample of data for an irregular time sequence
+rowIDs <- sample(1:nrow(SampleTransGPS),200)
+SampleTransGPS_ir <- SampleTransGPS[rowIDs,]
+```
+
+There is no need to sort the data befpre using the `interpolation_coords` function. The first 10 rows can be seen here:
+
+```{r head irreg, echo=FALSE }
+head(SampleTransGPS_ir,10)
+```
+
+This data can be interpolated using function `interpolate_coord`
+```{r interp func, tidy='formatR', tidy.opts=list(width.cutoff = 70),cache=T}
+#define the interpolation function inputs
+LatList2 <- SampleTransGPS_ir$Latitude
+LongList2 <- SampleTransGPS_ir$Longitude
+timeseq2 <- SampleTransGPS_ir$First.Time
+timeseq2 <-  as.POSIXct(timeseq2, format = "%I:%M:%S %p")
+timeint <- 2 ###2 seconds
+
+interp_data <- interpolate_coords(LatList2,LongList2,timeseq2,timeint)
+
 ```
 
 #### Generate Bounding Boxes
