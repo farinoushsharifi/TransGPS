@@ -28,8 +28,8 @@ Creating bounding boxes allows the users to access OSM data without any challeng
 
 ## Installation
 
-```{r install, tidy='formatR'}
-##devtools::install_github("farinoushsharifi/TransGPS")
+```{r install, tidy='formatR',eval=FALSE, echo=TRUE}
+devtools::install_github("farinoushsharifi/TransGPS")
 ```
 
 ## Usage
@@ -63,7 +63,8 @@ InitProj <- "+proj=longlat +ellps=WGS84
 NextProj <- "+init=epsg:28992"
 
 #convert from the initial CRS to a new one
-convlist <- convert_crs(LatList1,LongList1,InitProj,NextProj)
+convlist <- convert_crs(LatList=LatList1,LongList=LongList1,
+                        InitProj=InitProj,NextProj=NextProj)
 ```
 
 The first 10 rows of the converted data can be seen here:
@@ -97,7 +98,8 @@ timeseq2 <-  as.POSIXct(timeseq2, format = "%I:%M:%S %p")
 timeint <- 2 ###2 seconds
 
 #interpolate the GPS coordinates
-interp_data <- interpolate_coords(LatList2,LongList2,timeseq2,timeint)
+interp_data <- interpolate_coords(LatList=LatList2,LongList=LongList2,
+                                  timeseq=timeseq2,timeint=timeint)
 ```
 
 The first 10 rows of this interpolated datacan be seen here:
@@ -116,7 +118,9 @@ offLong=0.001
 offLat=0.002
 
 #create boxes
-boxout <- get_boxes(LatList1,LongList1,timeseq1)
+boxout <- get_boxes(LatList=LatList1,LongList=LongList1,
+                    timeseq=timeseq1,resolution = resolution,
+                    offLong=offLong,offLat = offLat)
 boxcuts <- boxout$boxtable$boxcuts
 boxlist <- boxout$boxlist
 ```
@@ -144,4 +148,4 @@ head(IDList,10)
 
 ## Details
 
-For more information on TransGPS Package, please access the package documentations or vignettes. Please feel free to contact the author.
+For more information on TransGPS Package, please access the package documentations. Please feel free to contact the author.

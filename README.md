@@ -99,7 +99,10 @@ To better study the bounding boxes generated and estimate the
 `resolution` and margins, `plot_route` function is provided. It also has
 the option to show the average speed of the vehicle on the corridor.
 
-![](README_files/figure-gfm/plot-1.png)<!-- -->
+``` r
+# plot the link speeds and bounding boxes
+plot_route(LatList = LatList, LongList = LongList, timeseq = timeseq, boxlist = boxlist)
+```
 
 ### 5\. Matching The OSM Link IDs to GPS Coordinates
 
@@ -109,10 +112,10 @@ package helps with this process in multiple ways. Firstly, it splits the
 network in few boxes and reduce the tension of accessing the whole OSM
 data at once or setting up a server for “planet.osm” data. Secondly, it
 considers `k` close points rather than the closest point to the
-coordinate. Finally, it tries to keep the route choice
-consistency.
+coordinate. Finally, it tries to keep the route choice consistency.
 
 ``` r
+# match each points to an OSM highway
 IDList <- match_highway(LatList = LatList, LongList = LongList, timeseq = timeseq, 
     k = 5, boxcuts = boxcuts, boxlist = boxlist)
 ```
