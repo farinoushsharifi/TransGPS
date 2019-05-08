@@ -21,23 +21,30 @@ Creating bounding boxes allows the users to access OSM data without any challeng
 
 ## Installation
 
-```{r install, tidy='formatR'}
-##devtools::install_github("farinoushsharifi/TransGPS")
+```{r install, tidy='formatR',eval=FALSE, echo=TRUE}
+devtools::install_github("farinoushsharifi/TransGPS")
 ```
 
 ## Usage
 
 ```{r attach, echo=T, results='hide', message=F, warning=F, tidy='formatR'}
 library(TransGPS)
+```
+
+```{r head data, echo=FALSE,cache=TRUE,results='hide'}
 
 ### Load Sample Data
 data("SampleTransGPS")
-```
-
-The first 10 rows of the data can be seen here:
-
-```{r head data, echo=FALSE}
 head(as.data.frame(SampleTransGPS),10)
+#define the conversion function inputs 
+LatList <- SampleTransGPS$Latitude  
+LongList <- SampleTransGPS$Longitude
+timeseq <- SampleTransGPS$First.Time
+timeseq <-  as.POSIXct(timeseq, format = "%I:%M:%S %p")
+
+InitProj <- "+proj=longlat +ellps=WGS84 
++datum=WGS84 +no_defs +towgs84=0,0,0"
+NextProj <- "+init=epsg:28992"
 ```
 
 ### 1. Coordinates Conversion to New CRS
@@ -45,71 +52,45 @@ head(as.data.frame(SampleTransGPS),10)
 Conversion of the GPS coordinates into a new CRS is the base to initiate any GPS analysis studies. `convert_crs` takes the initial latitude and longitude of a list of points and convert to any new CRS. The default value for the final projection is `"+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs +towgs84=0,0,0"`, which the CRS corresponding to OSM data (and the CRS for the `SampleTransGPS` data).
 
 ```{r conversion, tidy='formatR', tidy.opts=list(width.cutoff = 70),cache=T}
-#define the conversion function inputs 
-LatList1 <- SampleTransGPS$Latitude  
-LongList1 <- SampleTransGPS$Longitude
-timeseq1 <- SampleTransGPS$First.Time
-timeseq1 <-  as.POSIXct(timeseq1, format = "%I:%M:%S %p")
 
-InitProj <- "+proj=longlat +ellps=WGS84 
-+datum=WGS84 +no_defs +towgs84=0,0,0"
-NextProj <- "+init=epsg:28992"
-
-#convert from the initial CRS to a new one
-convlist <- convert_crs(LatList1,LongList1,InitProj,NextProj)
-```
-
-The first 10 rows of the converted data can be seen here:
-
-```{r head convlist, echo=FALSE }
-head(data.frame(convlist$Latitude,convlist$Longitude),10)
+#convert from the initial CRS projection to a new one
+convlist <- convert_crs(LatList=LatList,LongList=LongList,
+                        InitProj=InitProj,NextProj=NextProj)
 ```
 
 ### 2. Coordinates Interpolation
 
 Intepolation of coordinates over a desired time sequence is so useful in case of irregular time sequence or better visualization of data on contour maps. Function `interpolate_coords` takes the lists of latitudes and longitudes over an irregular time sequence and interpolates coordinates.
-```{r interp data, tidy='formatR', tidy.opts=list(width.cutoff = 70),cache=TRUE}
+```{r interp data, tidy='formatR', tidy.opts=list(width.cutoff = 70),echo=FALSE,results='hide',cache=TRUE}
 #taking a sample of data for an irregular time sequence
 rowIDs <- sample(1:nrow(SampleTransGPS),200)
 SampleTransGPS_ir <- SampleTransGPS[rowIDs,]
 ```
 
-There is no need to sort the data befpre using the `interpolation_coords` function. The first 10 rows can be seen here:
-
-```{r head irreg, echo=FALSE }
-head(SampleTransGPS_ir,10)
-```
-
-This data can be interpolated using function `interpolate_coord`
 ```{r interp func, tidy='formatR', tidy.opts=list(width.cutoff = 70),cache=T}
-#define the interpolation function inputs
-LatList2 <- SampleTransGPS_ir$Latitude
-LongList2 <- SampleTransGPS_ir$Longitude
-timeseq2 <- SampleTransGPS_ir$First.Time
-timeseq2 <-  as.POSIXct(timeseq2, format = "%I:%M:%S %p")
-timeint <- 2 ###2 seconds
 
-#interpolate the GPS coordinates
-interp_data <- interpolate_coords(LatList2,LongList2,timeseq2,timeint)
-```
-
-The first 10 rows of this interpolated datacan be seen here:
-
-```{r head interp, echo=FALSE }
-head(interp_data,10)
+#interpolate the GPS coordinates over 3 seconds
+interp_data <- interpolate_coords(LatList=LatList,LongList=LongList,
+                                  timeseq=timeseq,timeint=3)
 ```
 
 ### 3. Generate Bounding Boxes
 
 While working with specific few roads rather than the whole network, generating regions and boxes around the corridors helps to better focus on the route, instead of the whole area, and remove unnecessary areas or roads from the data. So, accessing the OSM data can be easier, less challenging, and can be done in small chunks. `get_boxes` function splits the corridors in smaller regions by considering a maximum route distance of `resolution` within each box. `offLong` and `offLat`are the margins of each box from the closest coordinate point. The output gives the ID of box (`boxcuts`) for each point as well as the coordinates of each box (`boxlists`).
-```{r bbox, tidy='formatR', tidy.opts=list(width.cutoff = 70),cache=T}
+
+```{r bbox info, tidy='formatR', tidy.opts=list(width.cutoff = 70),echo=FALSE,results='hide',cache=TRUE}
 #define resolutions and margins
 resolution = 5
 offLong=0.001
 offLat=0.002
+```
 
-#create boxes
-boxout <- get_boxes(LatList1,LongList1,timeseq1)
+
+```{r bbox, tidy='formatR', tidy.opts=list(width.cutoff = 70),cache=T}
+#create bounding boxes
+boxout <- get_boxes(LatList=LatList,LongList=LongList,
+                    timeseq=timeseq,resolution = resolution,
+                    offLong = offLong,offLat = offLat)
 boxcuts <- boxout$boxtable$boxcuts
 boxlist <- boxout$boxlist
 ```
@@ -119,20 +100,14 @@ boxlist <- boxout$boxlist
 To better study the bounding boxes generated and estimate the `resolution` and margins, `plot_route` function is provided. It also has the option to show the average speed of the vehicle on the corridor.
 
 ```{r plot, echo=FALSE}
-plot_route(LatList1,LongList1,timeseq1,boxlist)
+plot_route(LatList,LongList,timeseq,boxlist)
 ```
 
 ### 5. Matching The OSM Link IDs to GPS Coordinates
 
 The process of matching the GPS points to the OSM data links or features can so challenging and inaccurate. The function `match_highway` in this package helps with this process in multiple ways. Firstly, it splits the network in few boxes and reduce the tension of accessing the whole OSM data at once or setting up a server for "planet.osm" data. Secondly, it considers `k` close points rather than the closest point to the coordinate. Finally, it tries to keep the route choice consistency.  
 ```{r match, tidy='formatR', tidy.opts=list(width.cutoff = 70),cache=T}
-IDList <- match_highway(LatList= LatList1,LongList= LongList1,timeseq=timeseq1,k=5,boxcuts = boxcuts, boxlist=boxlist)
-```
-
-The output of this function is the list of OSM highway link IDs assigned to each point.
-
-```{r head match, echo=FALSE }
-head(IDList,10)
+IDList <- match_highway(LatList= LatList,LongList= LongList,timeseq=timeseq,k=5,boxcuts = boxcuts, boxlist=boxlist)
 ```
 
 ## Details

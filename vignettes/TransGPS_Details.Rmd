@@ -81,7 +81,7 @@ rowIDs <- sample(1:nrow(SampleTransGPS),200)
 SampleTransGPS_ir <- SampleTransGPS[rowIDs,]
 ```
 
-There is no need to sort the data befpre using the `interpolation_coords` function. The first 10 rows can be seen here:
+There is no need to sort the data before using the `interpolation_coords` function. The first 10 rows can be seen here:
 
 ```{r head irreg, echo=FALSE }
 head(SampleTransGPS_ir,10)
