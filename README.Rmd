@@ -115,4 +115,4 @@ IDList <- match_highway(LatList= LatList,LongList= LongList,timeseq=timeseq,k=5,
 
 ## Details
 
-For more information on TransGPS Package, please access the package documentations or vignettes. Please feel free to contact the author.
+For more information on TransGPS Package, please access the package documentations or vignettes [vignettes](http://rpubs.com/farinoushsharifi/TransGPS). Please feel free to contact the author.
