@@ -100,8 +100,9 @@ To better study the bounding boxes generated and estimate the
 the option to show the average speed of the vehicle on the corridor.
 
 ``` r
-# plot the link speeds and bounding boxes
-plot_route(LatList = LatList, LongList = LongList, timeseq = timeseq, boxlist = boxlist)
+#plot the link speeds and bounding boxes
+plot_route(LatList=LatList,LongList=LongList,timeseq=timeseq,
+           boxlist=boxlist)
 ```
 
 ### 5\. Matching The OSM Link IDs to GPS Coordinates
@@ -123,4 +124,6 @@ IDList <- match_highway(LatList = LatList, LongList = LongList, timeseq = timese
 ## Details
 
 For more information on TransGPS Package, please access the package
-documentations or vignettes. Please feel free to contact the author.
+documentations or
+[vignettes](http://rpubs.com/farinoushsharifi/TransGPS). Please feel
+free to contact the author.
